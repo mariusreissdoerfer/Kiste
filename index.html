@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>3D Holzkiste in Web-Anwendung</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+        .controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            width: 20%;
+        }
+        .control-group {
+            margin-bottom: 10px;
+        }
+        label {
+            display: block;
+        }
+        input[type="number"], input[type="range"] {
+            width: 100%;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 5px;
+            text-align: middle;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        td input {
+            width: 100%;
+            box-sizing: border-box;
+            text-align: middle;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <div class="control-group">
+            <label for="länge">Länge</label>
+            <input type="range" id="länge" min="1" max="500" step="1" value="200">
+        </div>
+        <div class="control-group">
+            <label for="breite">Breite</label>
+            <input type="range" id="breite" min="1" max="300" step="1" value="120">
+        </div>
+        <div class="control-group">
+            <label for="höhe">Höhe</label>
+            <input type="range" id="höhe" min="1" max="300" step="1" value="150">
+        </div>
+        <div class="control-group">
+            <label>Querschnittswerte für Leisten und Kanthölzer</label>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Komponente</th>
+                        <th>Höhe</th>
+                        <th>Stärke</th>
+                        <th>Anzahl</th>
+                        <th>Länge</th>
+                        <th>dm³</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>LK</td>
+                        <td><input type="number" id="längskufenHöhe" value="12"></td>
+                        <td><input type="number" id="längskufenBreite" value="8"></td>
+                        <td><input type="number" id="anzahlLängskufen" min="2" max="10" value="2"></td>
+                        <td id="längeLängskufen"></td>
+                        <td id="volumenLängskufen"></td>
+                    </tr>
+                    <tr>
+                        <td>QK</td>
+                        <td><input type="number" id="querkufenHöhe" value="12"></td>
+                        <td><input type="number" id="querkufenBreite" value="8"></td>
+                        <td><input type="number" id="anzahlQuerkufen" min="2" max="10" value="2"></td>
+                        <td id="längeQuerkufen"></td>
+                        <td id="volumenQuerkufen"></td>
+                    </tr>
+                    <tr>
+                        <td>Kopfhölzer</td>
+                        <td><input type="number" id="kopfholzHöhe" value="12"></td>
+                        <td><input type="number" id="kopfholzBreite" value="8"></td>
+                        <td id="anzahlKopfholz"></td>
+                        <td id="längeKopfholz"></td>
+                        <td id="volumenKopfholz"></td>
+                    </tr>
+                    <tr>
+                        <td>Bodenauflage</td>
+                        <td><input type="number" id="bodenBrettDicke" value="4"></td>
+                        <td><input type="number" id="bodenBrettBreite" value="18"></td>
+                        <td id="anzahlBodenBretter"></td>
+                        <td id="bodenBrettLänge"></td>
+                        <td id="volumenBodenBretter"></td>
+                    </tr>
+                    <tr>
+                        <td>SL vertikal</td>
+                        <td><input type="number" id="SeitenleisteVertikalBreite" value="6"></td>
+                        <td><input type="number" id="SeitenleisteVertikalStärke" value="3"></td>
+                        <td><input type="number" id="anzahlSeitenLeistenVertikal" min="2" max="10" value="2"></td>
+                        <td id="längeSeitenLeistenVertikal"></td>
+                        <td id="volumenseitenLeisteVertikal"></td>
+                    </tr>
+                    <tr>
+                        <td>SL horizontal</td>
+                        <td><input type="number" id="SeitenleisteHorizontalBreite" value="6"></td>
+                        <td><input type="number" id="SeitenleisteHorizontalStärke" value="3"></td>
+                        <td><input type="number" id="anzahlSeitenLeistenHorizontal" min="2" max="10" value="2"></td>
+
+                        <td id="längeSeitenLeistenHorizontal"></td>
+                        <td id="volumenSeitenLeistenHorizontal"></td>
+                    </tr>
+                    <tr>
+                        <td>KL vertikal</td>
+                        <td><input type="number" id="KopfleisteVertikalBreite" value="6"></td>
+                        <td><input type="number" id="KopfleisteVertikalStärke" value="3"></td>
+                        <td><input type="number" id="anzahlKopfLeistenVertikal" min="2" max="10" value="2"></td>
+                        <td id="längeKopfLeistenVertikal"></td>
+                        <td id="volumenKopfleisteVertikal"></td>
+                    </tr>
+                    <tr>
+                        <td>KL horizontal</td>
+                        <td><input type="number" id="KopfleisteHorizontalBreite" value="6"></td>
+                        <td><input type="number" id="KopfleisteHorizontalStärke" value="3"></td>
+                        <td><input type="number" id="anzahlKopfLeistenHorizontal" min="2" max="10" value="2"></td>
+                        <td id="längeKopfLeistenHorizontal"></td>
+                        <td id="volumenKopfleisteHorizontal"></td>
+                    </tr>                    
+                    <tr>
+                        <td>DL vertikal</td>
+                        <td><input type="number" id="DeckelleisteVertikalBreite" value="6"></td>
+                        <td><input type="number" id="DeckelleisteVertikalStärke" value="3"></td>
+                        <td><input type="number" id="anzahlDeckelLeistenVertikal" min="2" max="10" value="2"></td>
+                        <td id="längeDeckelLeistenVertikal"></td>
+                        <td id="volumenDeckelLeisteVertikal"></td>
+                    </tr>
+                    <tr>
+                        <td>DL horizontal</td>
+                        <td><input type="number" id="DeckelleisteHorizontalBreite" value="6"></td>
+                        <td><input type="number" id="DeckelleisteHorizontalStärke" value="3"></td>
+                        <td><input type="number" id="anzahlDeckelLeistenHorizontal" min="2" max="10" value="2"></td>
+                        <td id="längeDeckelLeistenHorizontal"></td>
+                        <td id="volumendeckelLeisteHorizontal"></td>
+                    </tr> 
+                    <tr>
+                        <td>Deckelhölzer</td>
+                        <td><input type="number" id="DeckelholzHöhe" value="12"></td>
+                        <td><input type="number" id="DeckelholzBreite" value="8"></td>
+                        <td><input type="number" id="anzahlDeckelholz" min="0" max="10" value="2"></td>
+                        <td id="längeDeckelholz"></td>
+                        <td id="volumenDeckelholz"></td>
+                    </tr>      
+                    <tr>
+                        <td>Steher</td>
+                        <td><input type="number" id="SteherHöhe" value="12"></td>
+                        <td><input type="number" id="SteherBreite" value="8"></td>
+                        <td><input type="number" id="anzahlSteher" min="0" max="10" value="2"></td>
+                        <td id="längeSteher"></td>
+                        <td id="volumenSteher"></td>
+                    </tr>                 
+
+ 
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script>
+        // Szene, Kamera und Renderer erstellen
+        const szene = new THREE.Scene();
+        const kamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // OrbitControls für die Steuerung
+        const steuerung = new THREE.OrbitControls(kamera, renderer.domElement);
+        steuerung.enableDamping = true;
+        steuerung.dampingFactor = 0.25;
+        steuerung.screenSpacePanning = false;
+        steuerung.maxPolarAngle = Math.PI / 2;
+
+        // Licht hinzufügen
+        const umgebungslicht = new THREE.AmbientLight(0xffffff, 0.6);
+        szene.add(umgebungslicht);
+
+        const richtungslicht = new THREE.DirectionalLight(0xffffff, 0.6);
+        richtungslicht.position.set(10, 10, 10).normalize();
+        szene.add(richtungslicht);
+
+        let kistengruppe = new THREE.Group();
+        szene.add(kistengruppe);
+
+        // Funktion zum Erstellen der Holzkiste
+        function erstelleKiste(länge, breite, höhe, anzahlLängskufen, anzahlQuerkufen) {
+            // Material für die verschiedenen Komponenten
+            const längskufenMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+            const kopfholzMaterial = new THREE.MeshStandardMaterial({ color: 0xA0522D });
+            const bodenBrettMaterial = new THREE.MeshStandardMaterial({ color: 0xCD853F });
+            const querkufenMaterial = new THREE.MeshStandardMaterial({ color: 0xD2B48C });
+            const sperrholzMaterial = new THREE.MeshStandardMaterial({ color: 0xDEB887 });
+            const leistenKopfHorizontalMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+            const leistenKopfVertikalMaterial = new THREE.MeshStandardMaterial({ color: 0xA0522D });
+            const leistenSeiteHorizontalMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+            const leistenSeiteVertikalMaterial = new THREE.MeshStandardMaterial({ color: 0xA0522D });
+            const leistenDeckelHorizontalMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+            const leistenDeckelVertikalMaterial = new THREE.MeshStandardMaterial({ color: 0xA0522D });
+            const DeckelholzMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+            const SteherMaterial = new THREE.MeshStandardMaterial({ color: 0xA0522D });
+
+            // Linienmaterial für die sichtbaren Kanten
+            const kantenMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
+
+            // Hilfsfunktion zum Erstellen von Kanten
+            function createEdges(mesh) {
+                const edges = new THREE.EdgesGeometry(mesh.geometry);
+                const line = new THREE.LineSegments(edges, kantenMaterial);
+                line.position.copy(mesh.position);
+                line.rotation.copy(mesh.rotation);
+                line.scale.copy(mesh.scale);
+                return line;
+            }
+
+            // Maße der Komponenten
+
+            const sperrholzDicke = 1.2;
+
+            const längskufenBreite = parseFloat(document.getElementById('längskufenBreite').value);
+            const längskufenHöhe = parseFloat(document.getElementById('längskufenHöhe').value);
+            const kopfholzBreite = parseFloat(document.getElementById('kopfholzBreite').value);
+            const kopfholzHöhe = parseFloat(document.getElementById('kopfholzHöhe').value);
+            const bodenBrettDicke = parseFloat(document.getElementById('bodenBrettDicke').value);
+            const bodenBrettBreite = parseFloat(document.getElementById('bodenBrettBreite').value);
+            const querkufenBreite = parseFloat(document.getElementById('querkufenBreite').value);
+            const querkufenHöhe = parseFloat(document.getElementById('querkufenHöhe').value);
+            //const sperrholzDicke = parseFloat(document.getElementById('breite').value);
+            const KopfleisteHorizontalStärke = parseFloat(document.getElementById('KopfleisteHorizontalStärke').value);
+            const KopfleisteHorizontalBreite = parseFloat(document.getElementById('KopfleisteHorizontalBreite').value);
+            const anzahlKopfLeistenHorizontal = parseFloat(document.getElementById('anzahlKopfLeistenHorizontal').value);
+            const KopfleisteVertikalStärke = parseFloat(document.getElementById('KopfleisteVertikalStärke').value);
+            const KopfleisteVertikalBreite = parseFloat(document.getElementById('KopfleisteVertikalBreite').value);
+            const anzahlKopfLeistenVertikal = parseFloat(document.getElementById('anzahlKopfLeistenVertikal').value);
+            const SeitenleisteHorizontalStärke = parseFloat(document.getElementById('SeitenleisteHorizontalStärke').value);
+            const SeitenleisteHorizontalBreite = parseFloat(document.getElementById('SeitenleisteHorizontalBreite').value);
+            const anzahlSeitenLeistenHorizontal = parseFloat(document.getElementById('anzahlSeitenLeistenHorizontal').value);
+            const SeitenleisteVertikalStärke = parseFloat(document.getElementById('SeitenleisteVertikalStärke').value);
+            const SeitenleisteVertikalBreite = parseFloat(document.getElementById('SeitenleisteVertikalBreite').value);
+            const anzahlSeitenLeistenVertikal = parseFloat(document.getElementById('anzahlSeitenLeistenVertikal').value);
+            const DeckelleisteHorizontalStärke = parseFloat(document.getElementById('DeckelleisteHorizontalStärke').value);
+            const DeckelleisteHorizontalBreite = parseFloat(document.getElementById('DeckelleisteHorizontalBreite').value);
+            const anzahlDeckelLeistenHorizontal = parseFloat(document.getElementById('anzahlDeckelLeistenHorizontal').value);            
+            const DeckelleisteVertikalStärke = parseFloat(document.getElementById('DeckelleisteVertikalStärke').value);
+            const DeckelleisteVertikalBreite = parseFloat(document.getElementById('DeckelleisteVertikalBreite').value);
+            const anzahlDeckelLeistenVertikal = parseFloat(document.getElementById('anzahlDeckelLeistenVertikal').value);
+            let DeckelholzHöhe = parseFloat(document.getElementById('DeckelholzHöhe').value);
+            const DeckelholzBreite = parseFloat(document.getElementById('DeckelholzBreite').value);
+            const anzahlDeckelholz = parseFloat(document.getElementById('anzahlDeckelholz').value);
+            let SteherHöhe = parseFloat(document.getElementById('SteherHöhe').value);
+            const SteherBreite = parseFloat(document.getElementById('SteherBreite').value);
+            const anzahlSteher = parseFloat(document.getElementById('anzahlSteher').value);
+            
+
+            // Baugruppe für den Boden
+            let bodenGruppe = new THREE.Group();
+
+            // Setzt die höhe der Steher und der Deckelhölzer auf 0 wenn Anzahl = Null
+            if(anzahlDeckelholz==0){
+                DeckelholzHöhe=0;
+            }
+            if(anzahlSteher==0){
+                SteherHöhe=0;
+            }
+
+
+
+            // Querkufen erstellen und zur Boden-Baugruppe hinzufügen
+            const längeQuerkufen = breite + 2 * SteherHöhe + 2* sperrholzDicke + SeitenleisteVertikalStärke*2;
+            const querkufenAbstand = (länge - querkufenBreite) / (anzahlQuerkufen - 1);
+            const volumenQuerkufen = anzahlQuerkufen * querkufenBreite * querkufenHöhe * längeQuerkufen /1000;
+            for (let i = 0; i < anzahlQuerkufen; i++) {
+                const querkufenGeometrie = new THREE.BoxGeometry(querkufenBreite, querkufenHöhe, längeQuerkufen );
+                const querkufe = new THREE.Mesh(querkufenGeometrie, querkufenMaterial);
+                querkufe.position.set(-länge / 2 + i * querkufenAbstand + querkufenBreite / 2, - bodenBrettDicke - längskufenHöhe - querkufenHöhe / 2, 0);
+                bodenGruppe.add(querkufe);
+                bodenGruppe.add(createEdges(querkufe)); // Kanten hinzufügen
+            }
+
+            // Längskufen erstellen und zur Boden-Baugruppe hinzufügen
+            const längeLängskufen = länge+ KopfleisteHorizontalStärke* 2;
+            const längskufenAbstand = (breite + 2 * SteherHöhe + 2 * SeitenleisteVertikalStärke - längskufenBreite) / (anzahlLängskufen - 1);
+            const volumenLängskufen = anzahlLängskufen* längeLängskufen * längskufenHöhe * längskufenBreite /1000;
+            for (let i = 0; i < anzahlLängskufen; i++) {
+                const längskufenGeometrie = new THREE.BoxGeometry(längeLängskufen, längskufenHöhe, längskufenBreite);
+                const längskufe = new THREE.Mesh(längskufenGeometrie, längskufenMaterial);
+                längskufe.position.set(0, - bodenBrettDicke - längskufenHöhe / 2, -breite / 2 + längskufenBreite / 2 - SeitenleisteVertikalStärke - SteherHöhe + i * längskufenAbstand);
+                bodenGruppe.add(längskufe);
+                bodenGruppe.add(createEdges(längskufe)); // Kanten hinzufügen
+            }
+
+            // Kopfhölzer erstellen und zur Boden-Baugruppe hinzufügen
+            const längeKopfholz = breite + SteherHöhe * 2;
+            const anzahlKopfholz = 2;
+            const volumenKopfholz = anzahlKopfholz *kopfholzBreite * kopfholzHöhe * längeKopfholz /1000;
+            const kopfholzGeometrie = new THREE.BoxGeometry(kopfholzBreite, kopfholzHöhe, längeKopfholz);
+            const vorderesKopfholz = new THREE.Mesh(kopfholzGeometrie, kopfholzMaterial);
+            const hinteresKopfholz = new THREE.Mesh(kopfholzGeometrie, kopfholzMaterial);
+
+            vorderesKopfholz.position.set(-länge / 2 + kopfholzBreite / 2, - bodenBrettDicke + kopfholzHöhe / 2, 0);
+            hinteresKopfholz.position.set(länge / 2 - kopfholzBreite / 2, - bodenBrettDicke + kopfholzHöhe / 2, 0);
+
+
+
+            bodenGruppe.add(vorderesKopfholz);
+            bodenGruppe.add(hinteresKopfholz);
+            bodenGruppe.add(createEdges(vorderesKopfholz)); // Kanten hinzufügen
+            bodenGruppe.add(createEdges(hinteresKopfholz)); // Kanten hinzufügen
+
+            // Bodenauflage erstellen und zur Boden-Baugruppe hinzufügen
+            const bodenBrettLänge = breite + SteherHöhe * 2 + SeitenleisteVertikalStärke*2 ;
+            const anzahlBodenBretter = Math.floor((länge - kopfholzBreite * 2) / bodenBrettBreite);
+            const volumenBodenBretter = anzahlBodenBretter *bodenBrettBreite* bodenBrettDicke* bodenBrettLänge /1000;
+            for (let i = 0; i < anzahlBodenBretter; i++) {
+                const bodenBrettGeometrie = new THREE.BoxGeometry(bodenBrettBreite, bodenBrettDicke, bodenBrettLänge);
+                const bodenBrett = new THREE.Mesh(bodenBrettGeometrie, bodenBrettMaterial);
+                bodenBrett.position.set(-länge / 2 + kopfholzBreite + bodenBrettBreite / 2 + i * (länge - 2 * kopfholzBreite) / anzahlBodenBretter,- bodenBrettDicke / 2, 0);
+                bodenGruppe.add(bodenBrett);
+                bodenGruppe.add(createEdges(bodenBrett)); // Kanten hinzufügen
+            }
+
+            // Boden-Baugruppe zur Kistengruppe hinzufügen
+            kistengruppe.add(bodenGruppe);
+
+            // Baugruppe für die Kopfplatte
+            let kopfGruppe = new THREE.Group();
+
+            // Kopfplatte erstellen und zur Kopf-Baugruppe hinzufügen
+            const längeKopfplatte = breite + SeitenleisteHorizontalStärke * 2 + SteherHöhe *2;
+            const breiteKopfplatte = höhe + bodenBrettDicke + längskufenHöhe + DeckelleisteHorizontalStärke + DeckelholzHöhe;
+            const volumenKopfplatte = 2 * sperrholzDicke * breiteKopfplatte * längeKopfplatte /1000;
+            const kopfplatteGeometrie = new THREE.BoxGeometry(sperrholzDicke, breiteKopfplatte, längeKopfplatte);
+            const kopfplatte = new THREE.Mesh(kopfplatteGeometrie, sperrholzMaterial);
+            kopfplatte.position.set(KopfleisteHorizontalStärke+sperrholzDicke / 2, höhe / 2 + DeckelholzHöhe/2 - bodenBrettDicke/2 - längskufenHöhe/2 + DeckelleisteHorizontalStärke/2, 0);
+            kopfGruppe.add(kopfplatte);
+            kopfGruppe.add(createEdges(kopfplatte)); // Kanten hinzufügen
+
+            // Kopfplatte Leisten horizontal erstellen und zur Kopf-Baugruppe hinzufügen
+            const abstandKopfLeistenHorizontal = (höhe + DeckelholzHöhe + bodenBrettDicke - KopfleisteHorizontalBreite) / (anzahlKopfLeistenHorizontal - 1);
+            const längeKopfLeistenHorizontal = breite + SteherHöhe * 2;
+            const volumenKopfleisteHorizontal = 2 * anzahlKopfLeistenHorizontal *KopfleisteHorizontalStärke* KopfleisteHorizontalBreite* längeKopfLeistenHorizontal /1000;
+            for (let i = 0; i < anzahlKopfLeistenHorizontal; i++) {
+                const kopfLeisteHorizontalGeometrie = new THREE.BoxGeometry(KopfleisteHorizontalStärke, KopfleisteHorizontalBreite, längeKopfLeistenHorizontal);
+                const kopfLeisteHorizontal = new THREE.Mesh(kopfLeisteHorizontalGeometrie, leistenKopfHorizontalMaterial);
+                kopfLeisteHorizontal.position.set(KopfleisteHorizontalStärke / 2,  KopfleisteHorizontalBreite/2 - bodenBrettDicke + i * abstandKopfLeistenHorizontal, 0);
+                kopfGruppe.add(kopfLeisteHorizontal);
+                kopfGruppe.add(createEdges(kopfLeisteHorizontal)); // Kanten hinzufügen
+            }
+
+            // Kopfplatte Leisten vertikal erstellen und zur Kopf-Baugruppe hinzufügen
+            const abstandKopfLeistenVertikal = (breite + SteherHöhe * 2 - KopfleisteVertikalBreite) / (anzahlKopfLeistenVertikal - 1);
+            const längeKopfLeistenVertikal = höhe + DeckelholzHöhe - 2 * KopfleisteHorizontalBreite + bodenBrettDicke;
+            const volumenKopfleisteVertikal = 2 * anzahlKopfLeistenVertikal * KopfleisteVertikalStärke * längeKopfLeistenVertikal * KopfleisteVertikalBreite /1000;
+            for (let i = 0; i < anzahlKopfLeistenVertikal; i++) {
+                const kopfLeisteVertikalGeometrie = new THREE.BoxGeometry(KopfleisteVertikalStärke, längeKopfLeistenVertikal, KopfleisteVertikalBreite);
+                const kopfLeisteVertikal = new THREE.Mesh(kopfLeisteVertikalGeometrie, leistenKopfVertikalMaterial);
+                kopfLeisteVertikal.position.set( KopfleisteHorizontalStärke / 2, höhe / 2 + DeckelholzHöhe/2 - bodenBrettDicke/2, -breite / 2 - SteherHöhe + KopfleisteVertikalBreite/2 + i * abstandKopfLeistenVertikal);
+                kopfGruppe.add(kopfLeisteVertikal);
+                kopfGruppe.add(createEdges(kopfLeisteVertikal)); // Kanten hinzufügen
+            }
+
+            // Kopf-Baugruppe zur Kistengruppe hinzufügen
+            kopfGruppe.position.set(länge / 2 , 0, 0);
+            kistengruppe.add(kopfGruppe);
+
+            // Baugruppe für die Seitenplatte
+            let seitenGruppe = new THREE.Group();
+
+            // Seitenplatte erstellen und zur Seiten-Baugruppe hinzufügen
+            const längeSeitenplatte = länge + 2 * KopfleisteVertikalStärke + 2* sperrholzDicke;
+            const breiteSeitenplatte = höhe + DeckelholzHöhe + bodenBrettDicke + längskufenHöhe + DeckelleisteHorizontalStärke;
+            const volumenSeitenplatte = 2 * sperrholzDicke * breiteSeitenplatte * längeSeitenplatte /1000;
+            const seitenplatteGeometrie = new THREE.BoxGeometry(sperrholzDicke, breiteSeitenplatte, längeSeitenplatte);
+            const seitenplatte = new THREE.Mesh(seitenplatteGeometrie, sperrholzMaterial);
+            seitenplatte.position.set(sperrholzDicke/2 + SeitenleisteHorizontalStärke + SteherHöhe, höhe / 2 + DeckelholzHöhe/2 - bodenBrettDicke/2 - längskufenHöhe/2 + DeckelleisteHorizontalStärke/2 , 0);
+            seitenGruppe.add(seitenplatte);
+            seitenGruppe.add(createEdges(seitenplatte)); // Kanten hinzufügen
+
+            // Seitenplatte Leisten horizontal erstellen und zur Seiten-Baugruppe hinzufügen
+            const abstandSeitenLeistenHorizontal = (höhe-SeitenleisteHorizontalBreite) / (anzahlSeitenLeistenHorizontal - 1);
+            const längeSeitenLeistenHorizontal = länge + 2 * KopfleisteHorizontalStärke;
+            const volumenSeitenLeistenHorizontal = 2 * anzahlSeitenLeistenHorizontal * SeitenleisteHorizontalStärke * SeitenleisteHorizontalBreite * längeSeitenLeistenHorizontal /1000;
+            for (let i = 0; i < anzahlSeitenLeistenHorizontal; i++) {
+                const seitenLeisteHorizontalGeometrie = new THREE.BoxGeometry(SeitenleisteHorizontalStärke, SeitenleisteHorizontalBreite, längeSeitenLeistenHorizontal );
+                const seitenLeisteHorizontal = new THREE.Mesh(seitenLeisteHorizontalGeometrie, leistenSeiteHorizontalMaterial);
+                seitenLeisteHorizontal.position.set(SeitenleisteHorizontalStärke/2 + SteherHöhe, SeitenleisteHorizontalBreite/2 + i * abstandSeitenLeistenHorizontal, 0);
+                seitenGruppe.add(seitenLeisteHorizontal);
+                seitenGruppe.add(createEdges(seitenLeisteHorizontal)); // Kanten hinzufügen
+            }
+               
+
+
+            // Seitenplatte Leisten vertikal erstellen und zur Seiten-Baugruppe hinzufügen
+            const abstandSeitenLeistenVertikal = (länge + 2 * KopfleisteVertikalStärke - SeitenleisteVertikalBreite) / (anzahlSeitenLeistenVertikal - 1);
+            const längeSeitenLeistenVertikal = höhe - 2 * SeitenleisteHorizontalBreite;
+            const volumenseitenLeisteVertikal = 2 * anzahlSeitenLeistenVertikal * SeitenleisteVertikalStärke * längeSeitenLeistenVertikal * SeitenleisteVertikalBreite /1000;
+            for (let i = 0; i < anzahlSeitenLeistenVertikal; i++) {
+                const seitenLeisteVertikalGeometrie = new THREE.BoxGeometry(SeitenleisteVertikalStärke, längeSeitenLeistenVertikal, SeitenleisteVertikalBreite);
+                const seitenLeisteVertikal = new THREE.Mesh(seitenLeisteVertikalGeometrie, leistenSeiteVertikalMaterial);
+                seitenLeisteVertikal.position.set(SeitenleisteHorizontalStärke/2 + SteherHöhe, höhe/2, -länge / 2 - KopfleisteHorizontalStärke + SeitenleisteVertikalBreite/2 + i * abstandSeitenLeistenVertikal);
+                seitenGruppe.add(seitenLeisteVertikal);
+                seitenGruppe.add(createEdges(seitenLeisteVertikal)); // Kanten hinzufügen
+            }
+
+            // Steher erstellen und zur Seiten-Baugruppe hinzufügen
+            const abstandSteher = (länge) / (anzahlSteher+1);
+            const längeSteher = höhe;
+            const volumenSteher = 2 * anzahlSteher * SteherHöhe * längeSteher * SteherBreite /1000;
+            for (let i = 0; i < anzahlSteher; i++) {
+                const SteherGeometrie = new THREE.BoxGeometry(SteherHöhe, längeSteher, SteherBreite);
+                const seitenSteher = new THREE.Mesh(SteherGeometrie, leistenSeiteVertikalMaterial);
+                seitenSteher.position.set(+SteherHöhe/2, höhe/2,-länge/2 + abstandSteher + i * abstandSteher);
+                seitenGruppe.add(seitenSteher);
+                seitenGruppe.add(createEdges(seitenSteher)); // Kanten hinzufügen
+            }
+
+            // Seiten-Baugruppe zur Kistengruppe hinzufügen
+            seitenGruppe.position.set(0, 0, -breite/2);
+            seitenGruppe.rotation.y = Math.PI / 2;
+            kistengruppe.add(seitenGruppe);
+
+            // Baugruppe für die Deckelplatte
+            let deckelGruppe = new THREE.Group();
+
+            // Deckelplatte erstellen und zur Deckel-Baugruppe hinzufügen
+            const längeDeckelplatte = länge + 2 * KopfleisteVertikalStärke + 2* sperrholzDicke;
+            const breiteDeckelplatte = breite + SteherHöhe * 2 + 2 * SeitenleisteHorizontalStärke+ 2 * sperrholzDicke;
+            const volumenDeckel = längeDeckelplatte * sperrholzDicke * breiteDeckelplatte /1000;
+            const deckelplatteGeometrie = new THREE.BoxGeometry(längeDeckelplatte, sperrholzDicke, breiteDeckelplatte);
+            const deckelplatte = new THREE.Mesh(deckelplatteGeometrie, sperrholzMaterial);
+            deckelplatte.position.set(0, DeckelleisteHorizontalStärke+ DeckelholzHöhe + sperrholzDicke / 2, 0);
+            deckelGruppe.add(deckelplatte);
+            deckelGruppe.add(createEdges(deckelplatte)); // Kanten hinzufügen
+
+            // Deckelplatte Leisten horizontal erstellen und zur Deckel-Baugruppe hinzufügen
+            const abstandDeckelLeistenHorizontal = (breite + SteherHöhe * 2 + SeitenleisteHorizontalStärke * 2 - DeckelleisteHorizontalBreite) / (anzahlDeckelLeistenHorizontal - 1);
+            const längeDeckelLeistenHorizontal = länge + 2 * KopfleisteVertikalStärke;
+            const volumendeckelLeisteHorizontal = 2* anzahlDeckelLeistenHorizontal * längeDeckelLeistenHorizontal * DeckelleisteHorizontalStärke * DeckelleisteHorizontalBreite /1000;
+            for (let i = 0; i < anzahlDeckelLeistenHorizontal; i++) {
+                const deckelLeisteHorizontalGeometrie = new THREE.BoxGeometry(längeDeckelLeistenHorizontal, DeckelleisteHorizontalStärke, DeckelleisteHorizontalBreite);
+                const deckelLeisteHorizontal = new THREE.Mesh(deckelLeisteHorizontalGeometrie, leistenDeckelHorizontalMaterial);
+                deckelLeisteHorizontal.position.set(0, DeckelholzHöhe + DeckelleisteHorizontalStärke / 2, -breite / 2 - SteherHöhe - SeitenleisteHorizontalStärke + DeckelleisteHorizontalBreite/2 + i * abstandDeckelLeistenHorizontal);
+                deckelGruppe.add(deckelLeisteHorizontal);
+                deckelGruppe.add(createEdges(deckelLeisteHorizontal)); // Kanten hinzufügen
+            }
+
+            // Deckelplatte Leisten vertikal erstellen und zur Deckel-Baugruppe hinzufügen
+            const abstandDeckelLeistenVertikal = (länge + 2* KopfleisteHorizontalStärke - DeckelleisteVertikalBreite) / (anzahlDeckelLeistenVertikal - 1);
+            const längeDeckelLeistenVertikal = breite + 2 * SteherHöhe + 2 * SeitenleisteHorizontalStärke -2 * DeckelleisteHorizontalBreite;
+            const volumenDeckelLeisteVertikal = 2* anzahlDeckelLeistenVertikal * DeckelleisteVertikalBreite * DeckelleisteVertikalStärke * längeDeckelLeistenVertikal /1000;
+            for (let i = 0; i < anzahlDeckelLeistenVertikal; i++) {
+                const deckelLeisteVertikalGeometrie = new THREE.BoxGeometry(DeckelleisteVertikalBreite, DeckelleisteVertikalStärke, längeDeckelLeistenVertikal);
+                const deckelLeisteVertikal = new THREE.Mesh(deckelLeisteVertikalGeometrie, leistenDeckelVertikalMaterial);
+                deckelLeisteVertikal.position.set(-länge / 2 - KopfleisteVertikalStärke + DeckelleisteVertikalBreite/2 + i * abstandDeckelLeistenVertikal, DeckelholzHöhe + DeckelleisteHorizontalStärke / 2, 0);
+                deckelGruppe.add(deckelLeisteVertikal);
+                deckelGruppe.add(createEdges(deckelLeisteVertikal)); // Kanten hinzufügen
+            }
+
+            // Deckelholz erstellen und zur Deckel-Baugruppe hinzufügen
+            let abstandDeckelholz = länge / (anzahlDeckelholz + 1);
+            const längeDeckelholz = breite + 2 * SteherHöhe + 2 * SeitenleisteVertikalStärke;
+            const volumenDeckelholz = anzahlDeckelholz * DeckelholzBreite * DeckelholzHöhe * längeDeckelholz /1000;
+            for (let i = 0; i < anzahlDeckelholz; i++) {
+                const deckelholzGeometrie = new THREE.BoxGeometry(DeckelholzBreite, DeckelholzHöhe, längeDeckelholz);
+                const deckelDeckelholz = new THREE.Mesh(deckelholzGeometrie, DeckelholzMaterial);
+                deckelDeckelholz.position.set(-länge / 2 + abstandDeckelholz + i * abstandDeckelholz,DeckelholzHöhe / 2, 0);
+                deckelGruppe.add(deckelDeckelholz);
+                deckelGruppe.add(createEdges(deckelDeckelholz)); // Kanten hinzufügen
+            }
+
+            const kommastellen=1;
+
+            //Output für Textfelder
+            document.getElementById('längeLängskufen').textContent=längeLängskufen
+            document.getElementById('volumenLängskufen').textContent=volumenLängskufen.toFixed(kommastellen)
+            document.getElementById('längeQuerkufen').textContent=längeQuerkufen
+            document.getElementById('volumenQuerkufen').textContent=volumenQuerkufen.toFixed(kommastellen)
+            document.getElementById('anzahlKopfholz').textContent=anzahlKopfholz
+            document.getElementById('längeKopfholz').textContent=längeKopfholz
+            document.getElementById('volumenKopfholz').textContent=volumenKopfholz.toFixed(kommastellen)
+            document.getElementById('anzahlBodenBretter').textContent=anzahlBodenBretter
+            document.getElementById('bodenBrettLänge').textContent=bodenBrettLänge
+            document.getElementById('volumenBodenBretter').textContent=volumenBodenBretter.toFixed(kommastellen)
+            document.getElementById('längeSeitenLeistenHorizontal').textContent=längeSeitenLeistenHorizontal
+            document.getElementById('volumenSeitenLeistenHorizontal').textContent=volumenSeitenLeistenHorizontal.toFixed(kommastellen)
+            document.getElementById('längeSeitenLeistenVertikal').textContent=längeSeitenLeistenVertikal
+            document.getElementById('volumenseitenLeisteVertikal').textContent=volumenseitenLeisteVertikal.toFixed(kommastellen)
+            document.getElementById('längeKopfLeistenHorizontal').textContent=längeKopfLeistenHorizontal
+            document.getElementById('volumenKopfleisteHorizontal').textContent=volumenKopfleisteHorizontal.toFixed(kommastellen)
+            document.getElementById('längeKopfLeistenVertikal').textContent=längeKopfLeistenVertikal
+            document.getElementById('volumenKopfleisteVertikal').textContent=volumenKopfleisteVertikal.toFixed(kommastellen)
+            document.getElementById('längeDeckelLeistenHorizontal').textContent=längeDeckelLeistenHorizontal
+            document.getElementById('volumendeckelLeisteHorizontal').textContent=volumendeckelLeisteHorizontal.toFixed(kommastellen)          
+            document.getElementById('längeDeckelLeistenVertikal').textContent=längeDeckelLeistenVertikal
+            document.getElementById('volumenDeckelLeisteVertikal').textContent=volumenDeckelLeisteVertikal.toFixed(kommastellen)
+            document.getElementById('längeSteher').textContent=längeSteher
+            document.getElementById('volumenSteher').textContent=volumenSteher.toFixed(kommastellen)
+            document.getElementById('längeDeckelholz').textContent=längeDeckelholz
+            document.getElementById('volumenDeckelholz').textContent=volumenDeckelholz.toFixed(kommastellen)
+
+            // Deckel-Baugruppe zur Kistengruppe hinzufügen
+            deckelGruppe.position.set(0, höhe, 0);
+            kistengruppe.add(deckelGruppe);
+        }
+
+        // Event-Listener für die Schieberegler und Eingabefelder
+        document.getElementById('länge').addEventListener('input', aktualisiereKiste);
+        document.getElementById('breite').addEventListener('input', aktualisiereKiste);
+        document.getElementById('höhe').addEventListener('input', aktualisiereKiste);
+
+        document.getElementById('anzahlLängskufen').addEventListener('input', aktualisiereKiste);
+        document.getElementById('anzahlQuerkufen').addEventListener('input', aktualisiereKiste);
+
+        document.getElementById('längskufenBreite').addEventListener('input', aktualisiereKiste);
+        document.getElementById('längskufenHöhe').addEventListener('input', aktualisiereKiste);
+
+        document.getElementById('kopfholzBreite').addEventListener('input', aktualisiereKiste);
+        document.getElementById('kopfholzHöhe').addEventListener('input', aktualisiereKiste);
+
+        document.getElementById('bodenBrettDicke').addEventListener('input', aktualisiereKiste);
+        document.getElementById('bodenBrettBreite').addEventListener('input', aktualisiereKiste);
+
+        document.getElementById('querkufenBreite').addEventListener('input', aktualisiereKiste);
+        document.getElementById('querkufenHöhe').addEventListener('input', aktualisiereKiste);
+        //document.getElementById('sperrholzDicke').addEventListener('input', aktualisiereKiste);
+
+        document.getElementById('KopfleisteHorizontalStärke').addEventListener('input', function() {const value = this.value; document.getElementById('KopfleisteVertikalStärke').value = value; aktualisiereKiste();});
+        document.getElementById('KopfleisteHorizontalBreite').addEventListener('input', aktualisiereKiste);
+        document.getElementById('anzahlKopfLeistenHorizontal').addEventListener('input', aktualisiereKiste);     
+
+        document.getElementById('KopfleisteVertikalStärke').addEventListener('input', function() {const value = this.value; document.getElementById('KopfleisteHorizontalStärke').value = value;aktualisiereKiste();});
+        document.getElementById('KopfleisteVertikalBreite').addEventListener('input', aktualisiereKiste);
+        document.getElementById('anzahlKopfLeistenVertikal').addEventListener('input', aktualisiereKiste);
+
+        document.getElementById('SeitenleisteHorizontalStärke').addEventListener('input', function() {const value = this.value; document.getElementById('SeitenleisteVertikalStärke').value = value; aktualisiereKiste();});
+        document.getElementById('SeitenleisteHorizontalBreite').addEventListener('input', aktualisiereKiste);
+        document.getElementById('anzahlSeitenLeistenHorizontal').addEventListener('input', aktualisiereKiste);
+
+        document.getElementById('SeitenleisteVertikalStärke').addEventListener('input', function() {const value = this.value; document.getElementById('SeitenleisteHorizontalStärke').value = value; aktualisiereKiste(); });
+        document.getElementById('SeitenleisteVertikalBreite').addEventListener('input', aktualisiereKiste);
+        document.getElementById('anzahlSeitenLeistenVertikal').addEventListener('input', aktualisiereKiste);
+
+        document.getElementById('DeckelleisteHorizontalStärke').addEventListener('input', function() {const value = this.value; document.getElementById('DeckelleisteVertikalStärke').value = value; aktualisiereKiste(); });
+        document.getElementById('DeckelleisteHorizontalBreite').addEventListener('input', aktualisiereKiste);
+        document.getElementById('anzahlDeckelLeistenHorizontal').addEventListener('input', aktualisiereKiste);
+
+        document.getElementById('DeckelleisteVertikalStärke').addEventListener('input', function() { const value = this.value; document.getElementById('DeckelleisteHorizontalStärke').value = value; aktualisiereKiste();});
+        document.getElementById('DeckelleisteVertikalBreite').addEventListener('input', aktualisiereKiste);
+        document.getElementById('anzahlDeckelLeistenVertikal').addEventListener('input', aktualisiereKiste); 
+
+        document.getElementById('SteherHöhe').addEventListener('input', aktualisiereKiste); 
+        document.getElementById('SteherBreite').addEventListener('input', aktualisiereKiste);
+        document.getElementById('anzahlSteher').addEventListener('input', aktualisiereKiste);
+        document.getElementById('DeckelholzHöhe').addEventListener('input', aktualisiereKiste);
+        document.getElementById('DeckelholzBreite').addEventListener('input', aktualisiereKiste);
+        document.getElementById('anzahlDeckelholz').addEventListener('input', aktualisiereKiste);
+
+
+        function aktualisiereKiste() {
+            const länge = parseFloat(document.getElementById('länge').value);
+            const breite = parseFloat(document.getElementById('breite').value);
+            const höhe = parseFloat(document.getElementById('höhe').value);
+            const anzahlLängskufen = parseInt(document.getElementById('anzahlLängskufen').value);
+            const anzahlQuerkufen = parseInt(document.getElementById('anzahlQuerkufen').value);
+
+            // Entferne alte Kiste
+            while (kistengruppe.children.length > 0) {
+                kistengruppe.remove(kistengruppe.children[0]);
+            }
+
+            // Erstelle neue Kiste
+            erstelleKiste(länge, breite, höhe, anzahlLängskufen, anzahlQuerkufen);
+        }
+
+        // Initiale Kiste erstellen
+        erstelleKiste(100, 50, 50, 2, 2, 2, 2);
+
+        // Kamera Positionieren
+        kamera.position.set(0, 100, 300);
+        kamera.lookAt(0, 0, 0);
+
+        // Animationsschleife
+        function animate() {
+            requestAnimationFrame(animate);
+            steuerung.update(); // nur notwendig, wenn enableDamping aktiviert ist
+            renderer.render(szene, kamera);
+        }
+        animate();
+
+        // Fenstergröße anpassen
+        window.addEventListener('resize', () => {
+            kamera.aspect = window.innerWidth / window.innerHeight;
+            kamera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Initiale Kiste erstellen
+        aktualisiereKiste();
+    </script>
+</body>
+</html>
