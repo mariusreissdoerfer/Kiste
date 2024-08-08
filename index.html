@@ -45,6 +45,22 @@
             box-sizing: border-box;
             text-align: middle;
         }
+        #materialkosten::after {
+            content: " €";
+        }
+        #kgTara::after {
+            content: " kg";
+        }
+        #volumengesamt::after {
+            content: " m³";
+        }
+        #außenquadratmeter::after {
+            content: " m²";
+        }
+        #bodenquadratmeter::after {
+            content: " m²";
+        }
+
 
     </style>
 </head>
@@ -177,9 +193,55 @@
                 </tbody>
             </table>
         </div>
+        <div class="control-group">
+            <table>
+                <tbody>
+                    <tr>
+                        <td>Innenmaße L x B x H</td>
+                        <td id="innenlänge"></td>
+                        <td id="innenbreite"></td>
+                        <td id="innenhöhe"></td>
+                    </tr>
+                    <tr>
+                        <td>Außenmaße L x B x H</td>
+                        <td id="außenlänge"></td>
+                        <td id="außenbreite"></td>
+                        <td id="außenhöhe"></td>
+                    </tr>
+                    <tr>
+                        <td>AQM</td>
+                        <td id="außenquadratmeter"></td>
+                    </tr>
+                    <tr>
+                        <td>BQM</td>
+                        <td id="bodenquadratmeter"></td>
+                    </tr>
+                    <tr>
+                        <td>m³</td>
+                        <td id="volumengesamt"></td>
+                    </tr>
+                    <tr>
+                        <td>kg Tara</td>
+                        <td id="kgTara"></td>
+                    </tr>
+                    <tr>
+                        <td>Materialkosten</td>
+                        <td id="materialkosten"></td>
+                    </tr>
+
+                </tbody>
+            </table>
+            <button id="exportButton">exportiere Kistenzettel</button>
+            <p id="author" style="font-style: italic; text-align: center;">by Marius Reißdörfer</p>
+        </div>
     </div>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.14/jspdf.plugin.autotable.min.js"></script>
+
     <script>
         // Szene, Kamera und Renderer erstellen
         const szene = new THREE.Scene();
@@ -193,7 +255,7 @@
         steuerung.enableDamping = true;
         steuerung.dampingFactor = 0.25;
         steuerung.screenSpacePanning = false;
-        steuerung.maxPolarAngle = Math.PI / 2;
+        steuerung.maxPolarAngle = 4/3*Math.PI / 2;
 
         // Licht hinzufügen
         const umgebungslicht = new THREE.AmbientLight(0xffffff, 0.6);
@@ -491,6 +553,16 @@
                 deckelGruppe.add(createEdges(deckelDeckelholz)); // Kanten hinzufügen
             }
 
+            const außenlänge = länge + 2* KopfleisteHorizontalStärke + 2 * sperrholzDicke;
+            const außenbreite = breite + 2 * SteherHöhe + 2 * SeitenleisteHorizontalStärke + 2 * sperrholzDicke;
+            const außenhöhe = (höhe + bodenBrettDicke + längskufenHöhe + querkufenHöhe +DeckelholzHöhe + DeckelleisteHorizontalStärke+ sperrholzDicke);
+            const außenquadratmeter = 1/10000*(außenhöhe * außenlänge * 2 + außenhöhe * außenbreite * 2 +außenlänge* außenbreite * 2);
+            const bodenquadratmeter = 1/10000*(außenlänge* außenbreite);
+            const volumengesamt = 1/1000*(volumenBodenBretter+volumenDeckel+volumenDeckelLeisteVertikal+volumenDeckelholz+volumenKopfholz+volumenKopfleisteHorizontal+volumenKopfleisteVertikal+volumenKopfplatte+volumenLängskufen+volumenQuerkufen+volumenSeitenLeistenHorizontal+volumenSeitenplatte+volumenSteher+volumendeckelLeisteHorizontal+volumenseitenLeisteVertikal);
+            const kgTara = volumengesamt*0.46*1000;
+            const materialkosten = volumengesamt * 200
+
+
             const kommastellen=1;
 
             //Output für Textfelder
@@ -520,6 +592,19 @@
             document.getElementById('volumenSteher').textContent=volumenSteher.toFixed(kommastellen)
             document.getElementById('längeDeckelholz').textContent=längeDeckelholz
             document.getElementById('volumenDeckelholz').textContent=volumenDeckelholz.toFixed(kommastellen)
+ 
+            document.getElementById('innenlänge').textContent=länge.toFixed(0)
+            document.getElementById('innenbreite').textContent=breite.toFixed(0)
+            document.getElementById('innenhöhe').textContent=höhe.toFixed(0)
+            document.getElementById('außenlänge').textContent=außenlänge.toFixed(0)
+            document.getElementById('außenbreite').textContent=außenbreite.toFixed(0)
+            document.getElementById('außenhöhe').textContent=außenhöhe.toFixed(0)
+            document.getElementById('außenquadratmeter').textContent=außenquadratmeter.toFixed(1)
+            document.getElementById('bodenquadratmeter').textContent=bodenquadratmeter.toFixed(1)
+            document.getElementById('volumengesamt').textContent=volumengesamt.toFixed(2)
+            document.getElementById('kgTara').textContent=kgTara.toFixed(0)
+            document.getElementById('materialkosten').textContent=materialkosten.toFixed(0)
+
 
             // Deckel-Baugruppe zur Kistengruppe hinzufügen
             deckelGruppe.position.set(0, höhe, 0);
@@ -619,6 +704,48 @@
 
         // Initiale Kiste erstellen
         aktualisiereKiste();
+
+        function exportDataAsPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const data = [
+        ['Komponente', 'Höhe', 'Stärke', 'Anzahl', 'Länge', 'dm³'],
+        ['LK', document.getElementById('längskufenHöhe').value, document.getElementById('längskufenBreite').value, document.getElementById('anzahlLängskufen').value, document.getElementById('längeLängskufen').textContent, document.getElementById('volumenLängskufen').textContent],
+        ['QK', document.getElementById('querkufenHöhe').value, document.getElementById('querkufenBreite').value, document.getElementById('anzahlQuerkufen').value, document.getElementById('längeQuerkufen').textContent, document.getElementById('volumenQuerkufen').textContent],
+        ['Kopfhölzer', document.getElementById('kopfholzHöhe').value, document.getElementById('kopfholzBreite').value, document.getElementById('anzahlKopfholz').textContent, document.getElementById('längeKopfholz').textContent, document.getElementById('volumenKopfholz').textContent],
+        ['Bodenauflage', document.getElementById('bodenBrettDicke').value, document.getElementById('bodenBrettBreite').value, document.getElementById('anzahlBodenBretter').textContent, document.getElementById('bodenBrettLänge').textContent, document.getElementById('volumenBodenBretter').textContent],
+        ['SL vertikal', document.getElementById('SeitenleisteVertikalBreite').value, document.getElementById('SeitenleisteVertikalStärke').value, document.getElementById('anzahlSeitenLeistenVertikal').value, document.getElementById('längeSeitenLeistenVertikal').textContent, document.getElementById('volumenseitenLeisteVertikal').textContent],
+        ['SL horizontal', document.getElementById('SeitenleisteHorizontalBreite').value, document.getElementById('SeitenleisteHorizontalStärke').value, document.getElementById('anzahlSeitenLeistenHorizontal').value, document.getElementById('längeSeitenLeistenHorizontal').textContent, document.getElementById('volumenSeitenLeistenHorizontal').textContent],
+        ['KL vertikal', document.getElementById('KopfleisteVertikalBreite').value, document.getElementById('KopfleisteVertikalStärke').value, document.getElementById('anzahlKopfLeistenVertikal').value, document.getElementById('längeKopfLeistenVertikal').textContent, document.getElementById('volumenKopfleisteVertikal').textContent],
+        ['KL horizontal', document.getElementById('KopfleisteHorizontalBreite').value, document.getElementById('KopfleisteHorizontalStärke').value, document.getElementById('anzahlKopfLeistenHorizontal').value, document.getElementById('längeKopfLeistenHorizontal').textContent, document.getElementById('volumenKopfleisteHorizontal').textContent],
+        ['DL vertikal', document.getElementById('DeckelleisteVertikalBreite').value, document.getElementById('DeckelleisteVertikalStärke').value, document.getElementById('anzahlDeckelLeistenVertikal').value, document.getElementById('längeDeckelLeistenVertikal').textContent, document.getElementById('volumenDeckelLeisteVertikal').textContent],
+        ['DL horizontal', document.getElementById('DeckelleisteHorizontalBreite').value, document.getElementById('DeckelleisteHorizontalStärke').value, document.getElementById('anzahlDeckelLeistenHorizontal').value, document.getElementById('längeDeckelLeistenHorizontal').textContent, document.getElementById('volumendeckelLeisteHorizontal').textContent],
+        ['Deckelhölzer', document.getElementById('DeckelholzHöhe').value, document.getElementById('DeckelholzBreite').value, document.getElementById('anzahlDeckelholz').value, document.getElementById('längeDeckelholz').textContent, document.getElementById('volumenDeckelholz').textContent],
+        ['Steher', document.getElementById('SteherHöhe').value, document.getElementById('SteherBreite').value, document.getElementById('anzahlSteher').value, document.getElementById('längeSteher').textContent, document.getElementById('volumenSteher').textContent]
+    ];
+
+    doc.text("Kistenzettel", 10, 10);
+    doc.autoTable({
+        head: [data[0]],
+        body: data.slice(1),
+    });
+
+    doc.text(`Innenmaße L x B x H: ${document.getElementById('innenlänge').textContent} x ${document.getElementById('innenbreite').textContent} x ${document.getElementById('innenhöhe').textContent}`, 10, doc.lastAutoTable.finalY + 10);
+    doc.text(`Außenmaße L x B x H: ${document.getElementById('außenlänge').textContent} x ${document.getElementById('außenbreite').textContent} x ${document.getElementById('außenhöhe').textContent}`, 10, doc.lastAutoTable.finalY + 20);
+    doc.text(`AQM: ${document.getElementById('außenquadratmeter').textContent} m²`, 10, doc.lastAutoTable.finalY + 30);
+    doc.text(`BQM: ${document.getElementById('bodenquadratmeter').textContent} m²`, 10, doc.lastAutoTable.finalY + 40);
+    doc.text(`m³: ${document.getElementById('volumengesamt').textContent} m³`, 10, doc.lastAutoTable.finalY + 50);
+    doc.text(`kg Tara: ${document.getElementById('kgTara').textContent} kg`, 10, doc.lastAutoTable.finalY + 60);
+    doc.text(`Materialkosten: ${document.getElementById('materialkosten').textContent} €`, 10, doc.lastAutoTable.finalY + 70);
+
+    doc.save('exported_data.pdf');
+}
+
+document.getElementById('exportButton').addEventListener('click', exportDataAsPDF);
+
+
+        
     </script>
 </body>
 </html>
