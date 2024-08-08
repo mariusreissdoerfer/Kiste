@@ -14,6 +14,7 @@
             padding: 10px;
             border-radius: 5px;
             width: 25%;
+            font-family: Arial, sans-serif;
         }
         .control-group {
             margin-bottom: 10px;
@@ -27,6 +28,8 @@
         table {
             width: 100%;
             border-collapse: collapse;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
         }
         th, td {
             border: 1px solid #ccc;
@@ -48,18 +51,17 @@
     <div class="controls">
         <div class="control-group">
             <label for="länge">Länge</label>
-            <input type="range" id="länge" min="1" max="500" step="1" value="200">
+            <input type="range" id="länge" min="10" max="500" step="1" value="200">
         </div>
         <div class="control-group">
             <label for="breite">Breite</label>
-            <input type="range" id="breite" min="1" max="300" step="1" value="120">
+            <input type="range" id="breite" min="10" max="300" step="1" value="120">
         </div>
         <div class="control-group">
             <label for="höhe">Höhe</label>
-            <input type="range" id="höhe" min="1" max="300" step="1" value="150">
+            <input type="range" id="höhe" min="10" max="300" step="1" value="150">
         </div>
         <div class="control-group">
-            <label>Querschnittswerte für Leisten und Kanthölzer</label>
             <table>
                 <thead>
                     <tr>
