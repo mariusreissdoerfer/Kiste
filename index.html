@@ -15,7 +15,7 @@
             border-radius: 5px;
             width: 25%;
             font-family: Arial, sans-serif;
-            min-width: 350px;
+            min-width: 385px;
         }
         .control-group {
             margin-bottom: 10px;
@@ -66,6 +66,13 @@
 </head>
 <body>
     <div class="controls">
+        <button id="customButton">öffnen</button>
+            <input type="file" id="uploadButton" accept=".json" style="display: none;">
+        <button id="saveButton">Speichern</button>
+        <button id="exportButton">exportiere Kistenzettel</button>
+        <button id="toggleCameraButton">Ansicht umschalten</button>
+        <hr>
+      
         <div class="control-group">
             <label for="länge">Länge</label>
             <input type="range" id="länge" min="10" max="500" step="1" value="200">
@@ -78,6 +85,18 @@
             <label for="höhe">Höhe</label>
             <input type="range" id="höhe" min="10" max="300" step="1" value="150">
         </div>
+
+        <div class="control-group" style="display: flex; justify-content: space-between;">
+            <div style="flex: 1; margin-right: 10px;">
+                <label for="nettogewicht">Nettogewicht (kg)</label>
+                <input type="number" id="nettogewicht" value="300">
+            </div>
+            <div style="flex: 1; margin-right: 10px;">
+                <label for="stapellast">Stapellast (kg)</label>
+                <input type="number" id="stapellast" value="300">
+            </div>
+        </div>
+
         <div class="control-group">
             <table>
                 <thead>
@@ -88,6 +107,7 @@
                         <th>Anzahl</th>
                         <th>Länge</th>
                         <th>dm³</th>
+                        <th>S %</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -179,6 +199,7 @@
                         <td><input type="number" id="anzahlDeckelholz" min="0" max="10" value="2"></td>
                         <td id="längeDeckelholz"></td>
                         <td id="volumenDeckelholz"></td>
+                        <td id="sicherheitDeckelholz"></td>
                     </tr>      
                     <tr>
                         <td>Steher</td>
@@ -231,33 +252,34 @@
 
                 </tbody>
             </table>
-            <button id="exportButton">exportiere Kistenzettel</button>
             <p id="author" style="font-style: italic; text-align: center;">by Marius Reißdörfer</p>
         </div>
     </div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.14/jspdf.plugin.autotable.min.js"></script>
 
     <script>
         // Szene, Kamera und Renderer erstellen
         const szene = new THREE.Scene();
-        const kamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const kameraPerspektiv = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const kameraOrthogonal = new THREE.OrthographicCamera(window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, 0.1, 1000);
+        let aktuelleKamera = kameraPerspektiv;
+
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // OrbitControls für die Steuerung
-        const steuerung = new THREE.OrbitControls(kamera, renderer.domElement);
+        // OrbitControls für die Steuerung (bestehender Code)
+        const steuerung = new THREE.OrbitControls(aktuelleKamera, renderer.domElement);
         steuerung.enableDamping = true;
         steuerung.dampingFactor = 0.25;
         steuerung.screenSpacePanning = false;
-        steuerung.maxPolarAngle = 4/3*Math.PI / 2;
+        steuerung.maxPolarAngle = 4 / 3 * Math.PI / 2;
 
-        // Licht hinzufügen
+        // Licht hinzufügen (bestehender Code)
         const umgebungslicht = new THREE.AmbientLight(0xffffff, 0.6);
         szene.add(umgebungslicht);
 
@@ -268,8 +290,176 @@
         let kistengruppe = new THREE.Group();
         szene.add(kistengruppe);
 
+        function toggleCameraView() {
+    if (aktuelleKamera === kameraPerspektiv) {
+        // Speichere die aktuelle Blickrichtung der perspektivischen Kamera
+        const blickRichtung = new THREE.Vector3();
+        kameraPerspektiv.getWorldDirection(blickRichtung);
+
+        // Wechsel zur orthogonalen Kamera und übernehme die Position der perspektivischen Kamera
+        kameraOrthogonal.position.copy(kameraPerspektiv.position);
+        aktuelleKamera = kameraOrthogonal;
+
+        // Wähle die nächste orthogonale Ansicht basierend auf der Blickrichtung
+        if (Math.abs(blickRichtung.x) > Math.abs(blickRichtung.y) && Math.abs(blickRichtung.x) > Math.abs(blickRichtung.z)) {
+            if (blickRichtung.x > 0) {
+                kameraOrthogonal.position.set(-500, 0, 0); // Rechte Seitenansicht
+            } else {
+                kameraOrthogonal.position.set(500, 0, 0); // Linke Seitenansicht
+            }
+        } else if (Math.abs(blickRichtung.y) > Math.abs(blickRichtung.x) && Math.abs(blickRichtung.y) > Math.abs(blickRichtung.z)) {
+            if (blickRichtung.y > 0) {
+                kameraOrthogonal.position.set(0, -500, 0); // Draufsicht
+            } else {
+                kameraOrthogonal.position.set(0, 500, 0); // Ansicht von unten
+            }
+        } else {
+            if (blickRichtung.z > 0) {
+                kameraOrthogonal.position.set(0, 0, -500); // Frontalansicht
+            } else {
+                kameraOrthogonal.position.set(0, 0, 500); // Rückansicht
+            }
+        }
+
+        // Kamera genau auf den Ursprung schauen lassen und keine Rotationen zulassen
+        steuerung.target.set(0, 0, 0);
+        kameraOrthogonal.lookAt(0, 0, 0);
+    } else {
+        // Wechsel zurück zur perspektivischen Kamera und übernehme die Position der orthogonalen Kamera
+        kameraPerspektiv.position.copy(kameraOrthogonal.position);
+        aktuelleKamera = kameraPerspektiv;
+
+        // Blickrichtung zum Ursprung beibehalten
+        kameraPerspektiv.lookAt(0, 0, 0);
+    }
+
+    // Update OrbitControls mit der neuen Kamera
+    steuerung.object = aktuelleKamera;
+    steuerung.update();
+}
+
+
+
+        function downloadJSON(data, filename) {
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function exportParameters() {
+            const parameters = {
+                länge: document.getElementById('länge').value,
+                breite: document.getElementById('breite').value,
+                höhe: document.getElementById('höhe').value,
+                nettogewicht: document.getElementById('nettogewicht').value,
+                stapellast: document.getElementById('stapellast').value,
+                anzahlLängskufen: document.getElementById('anzahlLängskufen').value,
+                anzahlQuerkufen: document.getElementById('anzahlQuerkufen').value,
+                längskufenBreite: document.getElementById('längskufenBreite').value,
+                längskufenHöhe: document.getElementById('längskufenHöhe').value,
+                kopfholzBreite: document.getElementById('kopfholzBreite').value,
+                kopfholzHöhe: document.getElementById('kopfholzHöhe').value,
+                bodenBrettDicke: document.getElementById('bodenBrettDicke').value,
+                bodenBrettBreite: document.getElementById('bodenBrettBreite').value,
+                querkufenBreite: document.getElementById('querkufenBreite').value,
+                querkufenHöhe: document.getElementById('querkufenHöhe').value,
+                KopfleisteHorizontalStärke: document.getElementById('KopfleisteHorizontalStärke').value,
+                KopfleisteHorizontalBreite: document.getElementById('KopfleisteHorizontalBreite').value,
+                anzahlKopfLeistenHorizontal: document.getElementById('anzahlKopfLeistenHorizontal').value,
+                KopfleisteVertikalStärke: document.getElementById('KopfleisteVertikalStärke').value,
+                KopfleisteVertikalBreite: document.getElementById('KopfleisteVertikalBreite').value,
+                anzahlKopfLeistenVertikal: document.getElementById('anzahlKopfLeistenVertikal').value,
+                SeitenleisteHorizontalStärke: document.getElementById('SeitenleisteHorizontalStärke').value,
+                SeitenleisteHorizontalBreite: document.getElementById('SeitenleisteHorizontalBreite').value,
+                anzahlSeitenLeistenHorizontal: document.getElementById('anzahlSeitenLeistenHorizontal').value,
+                SeitenleisteVertikalStärke: document.getElementById('SeitenleisteVertikalStärke').value,
+                SeitenleisteVertikalBreite: document.getElementById('SeitenleisteVertikalBreite').value,
+                anzahlSeitenLeistenVertikal: document.getElementById('anzahlSeitenLeistenVertikal').value,
+                DeckelleisteHorizontalStärke: document.getElementById('DeckelleisteHorizontalStärke').value,
+                DeckelleisteHorizontalBreite: document.getElementById('DeckelleisteHorizontalBreite').value,
+                anzahlDeckelLeistenHorizontal: document.getElementById('anzahlDeckelLeistenHorizontal').value,
+                DeckelleisteVertikalStärke: document.getElementById('DeckelleisteVertikalStärke').value,
+                DeckelleisteVertikalBreite: document.getElementById('DeckelleisteVertikalBreite').value,
+                anzahlDeckelLeistenVertikal: document.getElementById('anzahlDeckelLeistenVertikal').value,
+                DeckelholzHöhe: document.getElementById('DeckelholzHöhe').value,
+                DeckelholzBreite: document.getElementById('DeckelholzBreite').value,
+                anzahlDeckelholz: document.getElementById('anzahlDeckelholz').value,
+                SteherHöhe: document.getElementById('SteherHöhe').value,
+                SteherBreite: document.getElementById('SteherBreite').value,
+                anzahlSteher: document.getElementById('anzahlSteher').value
+            };
+            downloadJSON(parameters, 'kiste_parameters.json');
+        }
+
+        
+
+        function uploadJSON(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const contents = e.target.result;
+                const parameters = JSON.parse(contents);
+                restoreParameters(parameters);
+            };
+            reader.readAsText(file);
+        }
+
+        function restoreParameters(parameters) {
+            // Werte laden und Felder aktualisieren
+            document.getElementById('länge').value =parameters.länge;
+            document.getElementById('breite').value =parameters.breite;
+            document.getElementById('höhe').value =parameters.höhe;
+            document.getElementById('nettogewicht').value =parameters.nettogewicht;
+            document.getElementById('stapellast').value =parameters.stapellast;
+            document.getElementById('anzahlLängskufen').value = parameters.anzahlLängskufen;
+            document.getElementById('anzahlQuerkufen').value = parameters.anzahlQuerkufen;
+            document.getElementById('längskufenBreite').value = parameters.längskufenBreite;
+            document.getElementById('längskufenHöhe').value = parameters.längskufenHöhe;
+            document.getElementById('kopfholzBreite').value = parameters.kopfholzBreite;
+            document.getElementById('kopfholzHöhe').value = parameters.kopfholzHöhe;
+            document.getElementById('bodenBrettDicke').value = parameters.bodenBrettDicke;
+            document.getElementById('bodenBrettBreite').value = parameters.bodenBrettBreite;
+            document.getElementById('querkufenBreite').value = parameters.querkufenBreite;
+            document.getElementById('querkufenHöhe').value = parameters.querkufenHöhe;
+            document.getElementById('KopfleisteHorizontalStärke').value = parameters.KopfleisteHorizontalStärke;
+            document.getElementById('KopfleisteHorizontalBreite').value = parameters.KopfleisteHorizontalBreite;
+            document.getElementById('anzahlKopfLeistenHorizontal').value = parameters.anzahlKopfLeistenHorizontal;
+            document.getElementById('KopfleisteVertikalStärke').value = parameters.KopfleisteVertikalStärke;
+            document.getElementById('KopfleisteVertikalBreite').value = parameters.KopfleisteVertikalBreite;
+            document.getElementById('anzahlKopfLeistenVertikal').value = parameters.anzahlKopfLeistenVertikal;
+            document.getElementById('SeitenleisteHorizontalStärke').value = parameters.SeitenleisteHorizontalStärke;
+            document.getElementById('SeitenleisteHorizontalBreite').value = parameters.SeitenleisteHorizontalBreite;
+            document.getElementById('anzahlSeitenLeistenHorizontal').value = parameters.anzahlSeitenLeistenHorizontal;
+            document.getElementById('SeitenleisteVertikalStärke').value = parameters.SeitenleisteVertikalStärke;
+            document.getElementById('SeitenleisteVertikalBreite').value = parameters.SeitenleisteVertikalBreite;
+            document.getElementById('anzahlSeitenLeistenVertikal').value = parameters.anzahlSeitenLeistenVertikal;
+            document.getElementById('DeckelleisteHorizontalStärke').value = parameters.DeckelleisteHorizontalStärke;
+            document.getElementById('DeckelleisteHorizontalBreite').value = parameters.DeckelleisteHorizontalBreite;
+            document.getElementById('anzahlDeckelLeistenHorizontal').value = parameters.anzahlDeckelLeistenHorizontal;
+            document.getElementById('DeckelleisteVertikalStärke').value = parameters.DeckelleisteVertikalStärke;
+            document.getElementById('DeckelleisteVertikalBreite').value = parameters.DeckelleisteVertikalBreite;
+            document.getElementById('anzahlDeckelLeistenVertikal').value = parameters.anzahlDeckelLeistenVertikal;
+            document.getElementById('DeckelholzHöhe').value = parameters.DeckelholzHöhe;
+            document.getElementById('DeckelholzBreite').value = parameters.DeckelholzBreite;
+            document.getElementById('anzahlDeckelholz').value = parameters.anzahlDeckelholz;
+            document.getElementById('SteherHöhe').value = parameters.SteherHöhe;
+            document.getElementById('SteherBreite').value = parameters.SteherBreite;
+            document.getElementById('anzahlSteher').value = parameters.anzahlSteher;
+
+            // Kiste aktualisieren, nachdem alle Werte gesetzt wurden
+            aktualisiereKiste();
+        }
+
         // Funktion zum Erstellen der Holzkiste
-        function erstelleKiste(länge, breite, höhe, anzahlLängskufen, anzahlQuerkufen) {
+        function erstelleKiste() {
             // Material für die verschiedenen Komponenten
             const längskufenMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
             const kopfholzMaterial = new THREE.MeshStandardMaterial({ color: 0xA0522D });
@@ -302,6 +492,13 @@
 
             const sperrholzDicke = 1.2;
 
+            const länge = parseFloat(document.getElementById('länge').value);
+            const breite = parseFloat(document.getElementById('breite').value);
+            const höhe = parseFloat(document.getElementById('höhe').value);
+            const nettogewicht = parseInt(document.getElementById('nettogewicht').value); 
+            const stapellast = parseInt(document.getElementById('stapellast').value);
+            const anzahlLängskufen = parseInt(document.getElementById('anzahlLängskufen').value);
+            const anzahlQuerkufen = parseInt(document.getElementById('anzahlQuerkufen').value);
             const längskufenBreite = parseFloat(document.getElementById('längskufenBreite').value);
             const längskufenHöhe = parseFloat(document.getElementById('längskufenHöhe').value);
             const kopfholzBreite = parseFloat(document.getElementById('kopfholzBreite').value);
@@ -347,8 +544,6 @@
             if(anzahlSteher==0){
                 SteherHöhe=0;
             }
-
-
 
             // Querkufen erstellen und zur Boden-Baugruppe hinzufügen
             const längeQuerkufen = breite + 2 * SteherHöhe + 2* sperrholzDicke + SeitenleisteVertikalStärke*2;
@@ -553,6 +748,10 @@
                 deckelGruppe.add(createEdges(deckelDeckelholz)); // Kanten hinzufügen
             }
 
+            // Deckel-Baugruppe zur Kistengruppe hinzufügen
+            deckelGruppe.position.set(0, höhe, 0);
+            kistengruppe.add(deckelGruppe);
+
             const außenlänge = länge + 2* KopfleisteHorizontalStärke + 2 * sperrholzDicke;
             const außenbreite = breite + 2 * SteherHöhe + 2 * SeitenleisteHorizontalStärke + 2 * sperrholzDicke;
             const außenhöhe = (höhe + bodenBrettDicke + längskufenHöhe + querkufenHöhe +DeckelholzHöhe + DeckelleisteHorizontalStärke+ sperrholzDicke);
@@ -561,6 +760,16 @@
             const volumengesamt = 1/1000*(volumenBodenBretter+volumenDeckel+volumenDeckelLeisteVertikal+volumenDeckelholz+volumenKopfholz+volumenKopfleisteHorizontal+volumenKopfleisteVertikal+volumenKopfplatte+volumenLängskufen+volumenQuerkufen+volumenSeitenLeistenHorizontal+volumenSeitenplatte+volumenSteher+volumendeckelLeisteHorizontal+volumenseitenLeisteVertikal);
             const kgTara = volumengesamt*0.46*1000;
             const materialkosten = volumengesamt * 200
+
+            //Statik
+            const zulässigeSpannungHolz=240
+            //Deckelholz
+            const wiederstandsmomentDeckelholz = DeckelholzBreite * DeckelholzHöhe * DeckelholzHöhe/6;
+            const streckenlastproDecelholz = stapellast*10/anzahlDeckelholz/längeDeckelholz;
+            const maximalmomentDeckelholz = streckenlastproDecelholz * längeDeckelholz * längeDeckelholz/8;
+            const erforderlichesWiederstandsmomentDeckelholz =  maximalmomentDeckelholz/zulässigeSpannungHolz;
+            const sicherheitDeckelholz = wiederstandsmomentDeckelholz/erforderlichesWiederstandsmomentDeckelholz*100;
+
 
 
             const kommastellen=1;
@@ -592,7 +801,7 @@
             document.getElementById('volumenSteher').textContent=volumenSteher.toFixed(kommastellen)
             document.getElementById('längeDeckelholz').textContent=längeDeckelholz
             document.getElementById('volumenDeckelholz').textContent=volumenDeckelholz.toFixed(kommastellen)
- 
+            document.getElementById('sicherheitDeckelholz').textContent=sicherheitDeckelholz.toFixed(0)
             document.getElementById('innenlänge').textContent=länge.toFixed(0)
             document.getElementById('innenbreite').textContent=breite.toFixed(0)
             document.getElementById('innenhöhe').textContent=höhe.toFixed(0)
@@ -605,16 +814,34 @@
             document.getElementById('kgTara').textContent=kgTara.toFixed(0)
             document.getElementById('materialkosten').textContent=materialkosten.toFixed(0)
 
-
-            // Deckel-Baugruppe zur Kistengruppe hinzufügen
-            deckelGruppe.position.set(0, höhe, 0);
-            kistengruppe.add(deckelGruppe);
         }
+
+
+
+        // Event-Listener für den Umschalt-Button
+        document.getElementById('toggleCameraButton').addEventListener('click', toggleCameraView);
+
+        // Event-Listener für den Upload-Button
+        document.getElementById('customButton').addEventListener('click', function() {
+            document.getElementById('uploadButton').click();
+        });
+        document.getElementById('uploadButton').addEventListener('change', uploadJSON);
+
+        // Event-Listener für den Export-Button
+        document.getElementById('exportButton').addEventListener('click', exportDataAsPDF);
+
+        // Event-Listener für den Export-Button
+        document.getElementById('saveButton').addEventListener('click', exportParameters);
+
 
         // Event-Listener für die Schieberegler und Eingabefelder
         document.getElementById('länge').addEventListener('input', aktualisiereKiste);
         document.getElementById('breite').addEventListener('input', aktualisiereKiste);
         document.getElementById('höhe').addEventListener('input', aktualisiereKiste);
+
+        document.getElementById('nettogewicht').addEventListener('input', aktualisiereKiste);
+        document.getElementById('stapellast').addEventListener('input', aktualisiereKiste);
+
 
         document.getElementById('anzahlLängskufen').addEventListener('input', aktualisiereKiste);
         document.getElementById('anzahlQuerkufen').addEventListener('input', aktualisiereKiste);
@@ -664,12 +891,8 @@
         document.getElementById('anzahlDeckelholz').addEventListener('input', aktualisiereKiste);
 
 
+
         function aktualisiereKiste() {
-            const länge = parseFloat(document.getElementById('länge').value);
-            const breite = parseFloat(document.getElementById('breite').value);
-            const höhe = parseFloat(document.getElementById('höhe').value);
-            const anzahlLängskufen = parseInt(document.getElementById('anzahlLängskufen').value);
-            const anzahlQuerkufen = parseInt(document.getElementById('anzahlQuerkufen').value);
 
             // Entferne alte Kiste
             while (kistengruppe.children.length > 0) {
@@ -677,28 +900,49 @@
             }
 
             // Erstelle neue Kiste
-            erstelleKiste(länge, breite, höhe, anzahlLängskufen, anzahlQuerkufen);
+            erstelleKiste();
+
+                // Sicherheitswert prüfen und Hintergrundfarbe ändern
+                const sicherheitDeckelholzElement = document.getElementById('sicherheitDeckelholz');
+                const sicherheitDeckelholzWert = parseFloat(sicherheitDeckelholzElement.textContent);
+
+                if (sicherheitDeckelholzWert > 100) {
+                    sicherheitDeckelholzElement.style.backgroundColor = 'green';
+                    sicherheitDeckelholzElement.style.color = 'white'; // Textfarbe anpassen
+                } else {
+                    sicherheitDeckelholzElement.style.backgroundColor = 'red';
+                    sicherheitDeckelholzElement.style.color = 'white'; // Textfarbe anpassen
+                }
+            
         }
 
         // Initiale Kiste erstellen
-        erstelleKiste(100, 50, 50, 2, 2, 2, 2);
+        erstelleKiste();
 
         // Kamera Positionieren
-        kamera.position.set(0, 100, 300);
-        kamera.lookAt(0, 0, 0);
+        kameraPerspektiv.position.set(0, 100, 300);
+        kameraOrthogonal.position.set(0, 100, 300);
+        kameraPerspektiv.lookAt(0, 0, 0);
+        kameraOrthogonal.lookAt(0, 0, 0);
+
 
         // Animationsschleife
         function animate() {
             requestAnimationFrame(animate);
             steuerung.update(); // nur notwendig, wenn enableDamping aktiviert ist
-            renderer.render(szene, kamera);
+            renderer.render(szene, aktuelleKamera);
         }
         animate();
 
         // Fenstergröße anpassen
         window.addEventListener('resize', () => {
-            kamera.aspect = window.innerWidth / window.innerHeight;
-            kamera.updateProjectionMatrix();
+            kameraPerspektiv.aspect = window.innerWidth / window.innerHeight;
+            kameraPerspektiv.updateProjectionMatrix();
+            kameraOrthogonal.left = window.innerWidth / -2;
+            kameraOrthogonal.right = window.innerWidth / 2;
+            kameraOrthogonal.top = window.innerHeight / 2;
+            kameraOrthogonal.bottom = window.innerHeight / -2;
+            kameraOrthogonal.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
@@ -706,43 +950,43 @@
         aktualisiereKiste();
 
         function exportDataAsPDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
 
-    const data = [
-        ['Komponente', 'Höhe', 'Stärke', 'Anzahl', 'Länge', 'dm³'],
-        ['LK', document.getElementById('längskufenHöhe').value, document.getElementById('längskufenBreite').value, document.getElementById('anzahlLängskufen').value, document.getElementById('längeLängskufen').textContent, document.getElementById('volumenLängskufen').textContent],
-        ['QK', document.getElementById('querkufenHöhe').value, document.getElementById('querkufenBreite').value, document.getElementById('anzahlQuerkufen').value, document.getElementById('längeQuerkufen').textContent, document.getElementById('volumenQuerkufen').textContent],
-        ['Kopfhölzer', document.getElementById('kopfholzHöhe').value, document.getElementById('kopfholzBreite').value, document.getElementById('anzahlKopfholz').textContent, document.getElementById('längeKopfholz').textContent, document.getElementById('volumenKopfholz').textContent],
-        ['Bodenauflage', document.getElementById('bodenBrettDicke').value, document.getElementById('bodenBrettBreite').value, document.getElementById('anzahlBodenBretter').textContent, document.getElementById('bodenBrettLänge').textContent, document.getElementById('volumenBodenBretter').textContent],
-        ['SL vertikal', document.getElementById('SeitenleisteVertikalBreite').value, document.getElementById('SeitenleisteVertikalStärke').value, document.getElementById('anzahlSeitenLeistenVertikal').value, document.getElementById('längeSeitenLeistenVertikal').textContent, document.getElementById('volumenseitenLeisteVertikal').textContent],
-        ['SL horizontal', document.getElementById('SeitenleisteHorizontalBreite').value, document.getElementById('SeitenleisteHorizontalStärke').value, document.getElementById('anzahlSeitenLeistenHorizontal').value, document.getElementById('längeSeitenLeistenHorizontal').textContent, document.getElementById('volumenSeitenLeistenHorizontal').textContent],
-        ['KL vertikal', document.getElementById('KopfleisteVertikalBreite').value, document.getElementById('KopfleisteVertikalStärke').value, document.getElementById('anzahlKopfLeistenVertikal').value, document.getElementById('längeKopfLeistenVertikal').textContent, document.getElementById('volumenKopfleisteVertikal').textContent],
-        ['KL horizontal', document.getElementById('KopfleisteHorizontalBreite').value, document.getElementById('KopfleisteHorizontalStärke').value, document.getElementById('anzahlKopfLeistenHorizontal').value, document.getElementById('längeKopfLeistenHorizontal').textContent, document.getElementById('volumenKopfleisteHorizontal').textContent],
-        ['DL vertikal', document.getElementById('DeckelleisteVertikalBreite').value, document.getElementById('DeckelleisteVertikalStärke').value, document.getElementById('anzahlDeckelLeistenVertikal').value, document.getElementById('längeDeckelLeistenVertikal').textContent, document.getElementById('volumenDeckelLeisteVertikal').textContent],
-        ['DL horizontal', document.getElementById('DeckelleisteHorizontalBreite').value, document.getElementById('DeckelleisteHorizontalStärke').value, document.getElementById('anzahlDeckelLeistenHorizontal').value, document.getElementById('längeDeckelLeistenHorizontal').textContent, document.getElementById('volumendeckelLeisteHorizontal').textContent],
-        ['Deckelhölzer', document.getElementById('DeckelholzHöhe').value, document.getElementById('DeckelholzBreite').value, document.getElementById('anzahlDeckelholz').value, document.getElementById('längeDeckelholz').textContent, document.getElementById('volumenDeckelholz').textContent],
-        ['Steher', document.getElementById('SteherHöhe').value, document.getElementById('SteherBreite').value, document.getElementById('anzahlSteher').value, document.getElementById('längeSteher').textContent, document.getElementById('volumenSteher').textContent]
-    ];
+            const data = [
+                ['Komponente', 'Höhe', 'Stärke', 'Anzahl', 'Länge', 'dm³'],
+                ['LK', document.getElementById('längskufenHöhe').value, document.getElementById('längskufenBreite').value, document.getElementById('anzahlLängskufen').value, document.getElementById('längeLängskufen').textContent, document.getElementById('volumenLängskufen').textContent],
+                ['QK', document.getElementById('querkufenHöhe').value, document.getElementById('querkufenBreite').value, document.getElementById('anzahlQuerkufen').value, document.getElementById('längeQuerkufen').textContent, document.getElementById('volumenQuerkufen').textContent],
+                ['Kopfhölzer', document.getElementById('kopfholzHöhe').value, document.getElementById('kopfholzBreite').value, document.getElementById('anzahlKopfholz').textContent, document.getElementById('längeKopfholz').textContent, document.getElementById('volumenKopfholz').textContent],
+                ['Bodenauflage', document.getElementById('bodenBrettDicke').value, document.getElementById('bodenBrettBreite').value, document.getElementById('anzahlBodenBretter').textContent, document.getElementById('bodenBrettLänge').textContent, document.getElementById('volumenBodenBretter').textContent],
+                ['SL vertikal', document.getElementById('SeitenleisteVertikalBreite').value, document.getElementById('SeitenleisteVertikalStärke').value, document.getElementById('anzahlSeitenLeistenVertikal').value, document.getElementById('längeSeitenLeistenVertikal').textContent, document.getElementById('volumenseitenLeisteVertikal').textContent],
+                ['SL horizontal', document.getElementById('SeitenleisteHorizontalBreite').value, document.getElementById('SeitenleisteHorizontalStärke').value, document.getElementById('anzahlSeitenLeistenHorizontal').value, document.getElementById('längeSeitenLeistenHorizontal').textContent, document.getElementById('volumenSeitenLeistenHorizontal').textContent],
+                ['KL vertikal', document.getElementById('KopfleisteVertikalBreite').value, document.getElementById('KopfleisteVertikalStärke').value, document.getElementById('anzahlKopfLeistenVertikal').value, document.getElementById('längeKopfLeistenVertikal').textContent, document.getElementById('volumenKopfleisteVertikal').textContent],
+                ['KL horizontal', document.getElementById('KopfleisteHorizontalBreite').value, document.getElementById('KopfleisteHorizontalStärke').value, document.getElementById('anzahlKopfLeistenHorizontal').value, document.getElementById('längeKopfLeistenHorizontal').textContent, document.getElementById('volumenKopfleisteHorizontal').textContent],
+                ['DL vertikal', document.getElementById('DeckelleisteVertikalBreite').value, document.getElementById('DeckelleisteVertikalStärke').value, document.getElementById('anzahlDeckelLeistenVertikal').value, document.getElementById('längeDeckelLeistenVertikal').textContent, document.getElementById('volumenDeckelLeisteVertikal').textContent],
+                ['DL horizontal', document.getElementById('DeckelleisteHorizontalBreite').value, document.getElementById('DeckelleisteHorizontalStärke').value, document.getElementById('anzahlDeckelLeistenHorizontal').value, document.getElementById('längeDeckelLeistenHorizontal').textContent, document.getElementById('volumendeckelLeisteHorizontal').textContent],
+                ['Deckelhölzer', document.getElementById('DeckelholzHöhe').value, document.getElementById('DeckelholzBreite').value, document.getElementById('anzahlDeckelholz').value, document.getElementById('längeDeckelholz').textContent, document.getElementById('volumenDeckelholz').textContent],
+                ['Steher', document.getElementById('SteherHöhe').value, document.getElementById('SteherBreite').value, document.getElementById('anzahlSteher').value, document.getElementById('längeSteher').textContent, document.getElementById('volumenSteher').textContent]
+            ];
 
-    doc.text("Kistenzettel", 10, 10);
-    doc.autoTable({
-        head: [data[0]],
-        body: data.slice(1),
-    });
+            doc.text("Kistenzettel", 10, 10);
+            doc.autoTable({
+                head: [data[0]],
+                body: data.slice(1),
+            });
 
-    doc.text(`Innenmaße L x B x H: ${document.getElementById('innenlänge').textContent} x ${document.getElementById('innenbreite').textContent} x ${document.getElementById('innenhöhe').textContent}`, 10, doc.lastAutoTable.finalY + 10);
-    doc.text(`Außenmaße L x B x H: ${document.getElementById('außenlänge').textContent} x ${document.getElementById('außenbreite').textContent} x ${document.getElementById('außenhöhe').textContent}`, 10, doc.lastAutoTable.finalY + 20);
-    doc.text(`AQM: ${document.getElementById('außenquadratmeter').textContent} m²`, 10, doc.lastAutoTable.finalY + 30);
-    doc.text(`BQM: ${document.getElementById('bodenquadratmeter').textContent} m²`, 10, doc.lastAutoTable.finalY + 40);
-    doc.text(`m³: ${document.getElementById('volumengesamt').textContent} m³`, 10, doc.lastAutoTable.finalY + 50);
-    doc.text(`kg Tara: ${document.getElementById('kgTara').textContent} kg`, 10, doc.lastAutoTable.finalY + 60);
-    doc.text(`Materialkosten: ${document.getElementById('materialkosten').textContent} €`, 10, doc.lastAutoTable.finalY + 70);
+            doc.text(`Innenmaße L x B x H: ${document.getElementById('innenlänge').textContent} x ${document.getElementById('innenbreite').textContent} x ${document.getElementById('innenhöhe').textContent}`, 10, doc.lastAutoTable.finalY + 10);
+            doc.text(`Außenmaße L x B x H: ${document.getElementById('außenlänge').textContent} x ${document.getElementById('außenbreite').textContent} x ${document.getElementById('außenhöhe').textContent}`, 10, doc.lastAutoTable.finalY + 20);
+            doc.text(`AQM: ${document.getElementById('außenquadratmeter').textContent} m²`, 10, doc.lastAutoTable.finalY + 30);
+            doc.text(`BQM: ${document.getElementById('bodenquadratmeter').textContent} m²`, 10, doc.lastAutoTable.finalY + 40);
+            doc.text(`m³: ${document.getElementById('volumengesamt').textContent} m³`, 10, doc.lastAutoTable.finalY + 50);
+            doc.text(`kg Tara: ${document.getElementById('kgTara').textContent} kg`, 10, doc.lastAutoTable.finalY + 60);
+            doc.text(`Materialkosten: ${document.getElementById('materialkosten').textContent} €`, 10, doc.lastAutoTable.finalY + 70);
 
-    doc.save('exported_data.pdf');
-}
+            doc.save('exported_data.pdf');
+        }
 
-document.getElementById('exportButton').addEventListener('click', exportDataAsPDF);
+
 
 
         
