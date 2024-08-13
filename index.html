@@ -6,10 +6,9 @@
     <style>
         body { margin: 0; }
         canvas { display: block; }
-        .controls {
+        .controls, .controls2 {
             position: absolute;
             top: 10px;
-            left: 10px;
             background: rgba(255, 255, 255, 0.8);
             padding: 10px;
             border-radius: 5px;
@@ -17,6 +16,24 @@
             font-family: Arial, sans-serif;
             min-width: 385px;
         }
+
+        .controls {
+            left: 10px;
+        }
+
+        .controls2 {
+            left: calc(10px + 25% + 30px);
+            display: none;
+        }
+
+        .bold-text {
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        
+
+
         .control-group {
             margin-bottom: 10px;
         }
@@ -34,7 +51,7 @@
         }
         th, td {
             border: 1px solid #ccc;
-            padding: 5px;
+            padding: 2px;
             text-align: middle;
         }
         th {
@@ -45,8 +62,8 @@
             box-sizing: border-box;
             text-align: middle;
         }
-        #materialkosten::after {
-            content: " €";
+        #co2::after {
+            content: " kg";
         }
         #kgTara::after {
             content: " kg";
@@ -71,6 +88,7 @@
         <button id="saveButton">Speichern</button>
         <button id="exportButton">exportiere Kistenzettel</button>
         <button id="toggleCameraButton">Ansicht umschalten</button>
+        <button class="open-kalkulation-button">Kalkulation</button>
         <hr>
       
         <div class="control-group">
@@ -246,8 +264,8 @@
                         <td id="kgTara"></td>
                     </tr>
                     <tr>
-                        <td>Materialkosten</td>
-                        <td id="materialkosten"></td>
+                        <td>CO2</td>
+                        <td id="co2"></td>
                     </tr>
 
                 </tbody>
@@ -255,17 +273,171 @@
             <p id="author" style="font-style: italic; text-align: center;">by Marius Reißdörfer</p>
         </div>
     </div>
+    <div class="controls2">
+        <button class="close-button">X</button>
+        <div class="control-group" style="display: flex; justify-content: space-between;">
+            <div style="flex: 1; margin-right: 10px;">
+                <label for="stdSatzPlattensäge">Stundensatz Plattensäge €/h</label>
+                <input type="number" id="stdSatzPlattensäge" value="50">
+            </div>
+            <div style="flex: 1; margin-right: 10px;">
+                <label for="stdSatzLeistenzuschnitt">Stundensatz Lesitenzuschnitt €/h</label>
+                <input type="number" id="stdSatzLeistenzuschnitt" value="45">
+            </div>
+        </div>
+        <div class="control-group" style="display: flex; justify-content: space-between;">
+            <div style="flex: 1; margin-right: 10px;">
+                <label for="stdSatzMitarbeiter">Stundensatz Mitarbeiter €/h</label>
+                <input type="number" id="stdSatzMitarbeiter" value="40">
+            </div>
+        </div>
+
+
+        <div class="control-group">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Arbeitsschritt</th>
+                        <th>Einheit</th>
+                        <th>Zeit/Einheit s</th>
+                        <th>Bearbeitungszeit min</th>
+                        <th>Kosten</th>
+                    </tr>
+                </thead>
+                <tbody>  
+                    <tbody>  
+                        <th>Zuschnitt</th>
+                    </tbody>
+                    <tr>
+                        <td>Plattenzuschnitt (anz. Platten)</td>
+                        <td id="anzahlPlatten"></td>
+                        <td><input type="number" id="dauerPlattenzuschnittProPlatte" value="240"></td>
+                        <td id="dauerPlattenzuschnitt"></td>
+                        <td id="kostenPlattenzuschnitt"></td>
+                    </tr>                 
+                </tbody>
+                <tbody>  
+                    <tr>
+                        <td>Leistenzuschnitt (anz. Leisten)</td>
+                        <td id="anzahlleisten"></td>
+                        <td><input type="number" id="dauerLeistenschnittProLeiste" value="60"></td>
+                        <td id="dauerLeistenzuschnitt"></td>
+                        <td id="kostenLeistenzuschnitt"></td>
+                    </tr>                 
+                </tbody>
+                <tbody>  
+                        <th>Bodenmontage</th>
+                </tbody>
+                <tbody>  
+                    <tr>
+                        <td>Bodenhölzer auflegen (anz. Knthölzer LK+QK+KKH)</td>
+                        <td id="anzahlBodenhölzer"></td>
+                        <td><input type="number" id="dauerBodenhölzerAuflegenProHolz" value="60"></td>
+                        <td id="dauerBodenhölzerAuflegen"></td>
+                        <td id="kostenBodenhölzerAuflegen"></td>
+                    </tr>                 
+                </tbody>
+                <tbody>  
+                    <tr>
+                        <td>Bodenhölzer verbolzen (anz. verbindungen)</td>
+                        <td id="anzahlBodenhölzerVerbindungen"></td>
+                        <td><input type="number" id="dauerBodenhölzerVerbindungenVerbolzenProHolz" value="120"></td>
+                        <td id="dauerBodenhölzerVerbindungenVerbolzen"></td>
+                        <td id="kostenBodenhölzerVerbindungenVerbolzen"></td>
+                    </tr>                 
+                </tbody>
+                <tbody>  
+                    <tr>
+                        <td>BodenBelag auflegen und Vernageln (anz. Bodenbretter)</td>
+                        <td id="anzahlBodenBretterFürKalk"></td>
+                        <td><input type="number" id="dauerBodenbretterAuflegenUndVernagelnProHolz" value="20"></td>
+                        <td id="dauerBodenbretterAuflegenUndVernageln"></td>
+                        <td id="kostenBodenbretterAuflegenUndVernageln"></td>
+                    </tr>                 
+                </tbody>
+
+                <tbody>  
+                    <th>Segmentmontage ...</th>
+                </tbody>
+                <tbody>  
+                    <th>Fertigungseinzelkosten</th>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td id="Fertigungseinzelkosten"></td>
+                </tbody>
+                <tbody>  
+                    <th>Fertigungsgemeinkosten</th>
+                    <td></td>
+                    <td><input type="number" id="zuschlagssatzFertigungsgemeinkosten" value="12"></td>
+                    <td></td>
+                    <td id="Fertigungsgemeinkosten"></td>
+                </tbody>
+                <tbody>  
+                    <th>Fertigungskosten</th>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td id="Fertigungskosten" class="bold-text"></td>></td>
+                </tbody>
+
+                <tbody>  
+                    <th>Materialeinzelkosten</th>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td id="marteialeinzelkosten"></td>
+                </tbody>
+
+                <tbody>  
+                    <th>Materialgeminkosten</th>
+                    <td></td>
+                    <td><input type="number" id="zuschlagssatzMaterialgemeinkosten" value="12"></td>
+                    <td></td>
+                    <td id="Materialgeminkosten"></td>
+                </tbody>
+
+                <tbody>  
+                    <th>Materialkosten</th>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td id="Materialkosten" class="bold-text"></td>></td>
+                </tbody>
+
+                <tbody>  
+                    <th>Herstellkosten</th>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td id="herstellkosten" class="bold-text"></td>
+                </tbody>
+
+
+        
+            </table>
+        </div>
+    </div>
+
+
+
+
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.14/jspdf.plugin.autotable.min.js"></script>
 
+
+    
     <script>
+
+
+        
         // Szene, Kamera und Renderer erstellen
         const szene = new THREE.Scene();
-        const kameraPerspektiv = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const kameraOrthogonal = new THREE.OrthographicCamera(window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, 0.1, 1000);
+        const kameraPerspektiv = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000);
+        const kameraOrthogonal = new THREE.OrthographicCamera(window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, 0.1, 5000);
         let aktuelleKamera = kameraPerspektiv;
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -276,7 +448,7 @@
         const steuerung = new THREE.OrbitControls(aktuelleKamera, renderer.domElement);
         steuerung.enableDamping = true;
         steuerung.dampingFactor = 0.25;
-        steuerung.screenSpacePanning = false;
+        steuerung.screenSpacePanning = true;
         steuerung.maxPolarAngle = 4 / 3 * Math.PI / 2;
 
         // Licht hinzufügen (bestehender Code)
@@ -759,7 +931,8 @@
             const bodenquadratmeter = 1/10000*(außenlänge* außenbreite);
             const volumengesamt = 1/1000*(volumenBodenBretter+volumenDeckel+volumenDeckelLeisteVertikal+volumenDeckelholz+volumenKopfholz+volumenKopfleisteHorizontal+volumenKopfleisteVertikal+volumenKopfplatte+volumenLängskufen+volumenQuerkufen+volumenSeitenLeistenHorizontal+volumenSeitenplatte+volumenSteher+volumendeckelLeisteHorizontal+volumenseitenLeisteVertikal);
             const kgTara = volumengesamt*0.46*1000;
-            const materialkosten = volumengesamt * 200
+            const co2 = außenquadratmeter * 7.47 // Kiste	 Stahlnagel	 HT	 ohne Konservierung	 Sperrholz	 7.47 kg/m²
+            
 
             //Statik
             const zulässigeSpannungHolz=240
@@ -770,6 +943,52 @@
             const erforderlichesWiederstandsmomentDeckelholz =  maximalmomentDeckelholz/zulässigeSpannungHolz;
             const sicherheitDeckelholz = wiederstandsmomentDeckelholz/erforderlichesWiederstandsmomentDeckelholz*100;
 
+
+
+
+            //Kalkulation
+
+            const stdSatzPlattensäge = parseFloat(document.getElementById('stdSatzPlattensäge').value);
+            const stdSatzLeistenzuschnitt = parseFloat(document.getElementById('stdSatzLeistenzuschnitt').value);
+            const stdSatzMitarbeiter = parseFloat(document.getElementById('stdSatzMitarbeiter').value);
+
+
+            const anzahlPlatten = 5;
+            const dauerPlattenzuschnittProPlatte = parseFloat(document.getElementById('dauerPlattenzuschnittProPlatte').value);
+            const dauerPlattenzuschnitt = dauerPlattenzuschnittProPlatte * anzahlPlatten;
+            const kostenPlattenzuschnitt = dauerPlattenzuschnitt * stdSatzPlattensäge/(60*60);
+
+            const anzahlleisten = anzahlBodenBretter+anzahlKopfLeistenHorizontal*2+anzahlKopfLeistenVertikal*2+anzahlSeitenLeistenHorizontal*2+anzahlSeitenLeistenVertikal*2+anzahlDeckelLeistenHorizontal*2+anzahlDeckelLeistenVertikal*2+anzahlLängskufen+anzahlQuerkufen+anzahlSteher*2+anzahlDeckelholz*2+anzahlKopfholz;
+            const dauerLeistenschnittProLeiste = parseFloat(document.getElementById('dauerLeistenschnittProLeiste').value);
+            const dauerLeistenzuschnitt = dauerLeistenschnittProLeiste * anzahlleisten;
+            const kostenLeistenzuschnitt = dauerLeistenzuschnitt * stdSatzLeistenzuschnitt/(60*60);
+
+            const anzahlBodenhölzer= anzahlLängskufen+anzahlQuerkufen+anzahlKopfholz;
+            const dauerBodenhölzerAuflegenProHolz = parseFloat(document.getElementById('dauerBodenhölzerAuflegenProHolz').value);
+            const dauerBodenhölzerAuflegen = dauerBodenhölzerAuflegenProHolz * anzahlBodenhölzer;
+            const kostenBodenhölzerAuflegen = dauerBodenhölzerAuflegen * stdSatzMitarbeiter/(60*60);
+
+            const anzahlBodenhölzerVerbindungen = anzahlLängskufen * anzahlQuerkufen + anzahlLängskufen * anzahlKopfholz ;
+            const dauerBodenhölzerVerbindungenVerbolzenProHolz = parseFloat(document.getElementById('dauerBodenhölzerVerbindungenVerbolzenProHolz').value);
+            const dauerBodenhölzerVerbindungenVerbolzen = dauerBodenhölzerVerbindungenVerbolzenProHolz * anzahlBodenhölzerVerbindungen;
+            const kostenBodenhölzerVerbindungenVerbolzen = dauerBodenhölzerVerbindungenVerbolzen * stdSatzMitarbeiter/(60*60);
+
+            const anzahlBodenBretterFürKalk = anzahlBodenBretter;
+            const dauerBodenbretterAuflegenUndVernagelnProHolz = parseFloat(document.getElementById('dauerBodenbretterAuflegenUndVernagelnProHolz').value);
+            const dauerBodenbretterAuflegenUndVernageln = dauerBodenbretterAuflegenUndVernagelnProHolz * anzahlBodenBretterFürKalk;
+            const kostenBodenbretterAuflegenUndVernageln = dauerBodenhölzerVerbindungenVerbolzen * stdSatzMitarbeiter/(60*60);
+
+            const Fertigungseinzelkosten = kostenPlattenzuschnitt +kostenLeistenzuschnitt + kostenBodenhölzerAuflegen + kostenBodenhölzerVerbindungenVerbolzen + kostenBodenbretterAuflegenUndVernageln;
+            const zuschlagssatzFertigungsgemeinkosten = parseFloat(document.getElementById('zuschlagssatzFertigungsgemeinkosten').value);
+            const Fertigungsgemeinkosten = zuschlagssatzFertigungsgemeinkosten/100 * Fertigungseinzelkosten;
+            const Fertigungskosten = Fertigungseinzelkosten + Fertigungsgemeinkosten;
+            const marteialeinzelkosten = volumengesamt * 200;
+            const zuschlagssatzMaterialgemeinkosten = parseFloat(document.getElementById('zuschlagssatzMaterialgemeinkosten').value);
+            const Materialgeminkosten = zuschlagssatzMaterialgemeinkosten/100 * marteialeinzelkosten;
+            const Materialkosten = Materialgeminkosten + marteialeinzelkosten;
+            const herstellkosten = Fertigungskosten + Materialkosten;
+            
+            
 
 
             const kommastellen=1;
@@ -812,7 +1031,38 @@
             document.getElementById('bodenquadratmeter').textContent=bodenquadratmeter.toFixed(1)
             document.getElementById('volumengesamt').textContent=volumengesamt.toFixed(2)
             document.getElementById('kgTara').textContent=kgTara.toFixed(0)
-            document.getElementById('materialkosten').textContent=materialkosten.toFixed(0)
+            document.getElementById('co2').textContent=co2.toFixed(2)
+
+            document.getElementById('anzahlPlatten').textContent=anzahlPlatten.toFixed(0)
+            document.getElementById('dauerPlattenzuschnitt').textContent=(dauerPlattenzuschnitt/60).toFixed(1)
+            document.getElementById('kostenPlattenzuschnitt').textContent=kostenPlattenzuschnitt.toFixed(2)
+
+            document.getElementById('anzahlleisten').textContent=anzahlleisten.toFixed(0) 
+            document.getElementById('dauerLeistenzuschnitt').textContent=(dauerLeistenzuschnitt/60).toFixed(1) 
+            document.getElementById('kostenLeistenzuschnitt').textContent=kostenLeistenzuschnitt.toFixed(2) 
+
+            document.getElementById('anzahlBodenhölzer').textContent=anzahlBodenhölzer.toFixed(0) 
+            document.getElementById('dauerBodenhölzerAuflegen').textContent=(dauerBodenhölzerAuflegen/60).toFixed(1) 
+            document.getElementById('kostenBodenhölzerAuflegen').textContent=kostenBodenhölzerAuflegen.toFixed(2) 
+
+            document.getElementById('anzahlBodenhölzerVerbindungen').textContent=anzahlBodenhölzerVerbindungen.toFixed(0) 
+            document.getElementById('dauerBodenhölzerVerbindungenVerbolzen').textContent=(dauerBodenhölzerVerbindungenVerbolzen/60).toFixed(1) 
+            document.getElementById('kostenBodenhölzerVerbindungenVerbolzen').textContent=kostenBodenhölzerVerbindungenVerbolzen.toFixed(2) 
+
+            document.getElementById('anzahlBodenBretterFürKalk').textContent=anzahlBodenBretterFürKalk.toFixed(0) 
+            document.getElementById('dauerBodenbretterAuflegenUndVernageln').textContent=(dauerBodenbretterAuflegenUndVernageln/60).toFixed(1) 
+            document.getElementById('kostenBodenbretterAuflegenUndVernageln').textContent=kostenBodenbretterAuflegenUndVernageln.toFixed(2) 
+
+            document.getElementById('Fertigungseinzelkosten').textContent=Fertigungseinzelkosten.toFixed(2) 
+            document.getElementById('Fertigungsgemeinkosten').textContent=Fertigungsgemeinkosten.toFixed(2)
+            document.getElementById('Fertigungskosten').textContent=Fertigungskosten.toFixed(2)
+            document.getElementById('marteialeinzelkosten').textContent=marteialeinzelkosten.toFixed(2)
+            document.getElementById('Materialgeminkosten').textContent=Materialgeminkosten.toFixed(2)
+            document.getElementById('Materialkosten').textContent=Materialkosten.toFixed(2)
+            document.getElementById('herstellkosten').textContent=herstellkosten.toFixed(2)
+
+
+
 
         }
 
@@ -832,6 +1082,15 @@
 
         // Event-Listener für den Export-Button
         document.getElementById('saveButton').addEventListener('click', exportParameters);
+
+        // JavaScript for handling the close and open actions
+        document.querySelector('.open-kalkulation-button').addEventListener('click', function() {
+            document.querySelector('.controls2').style.display = 'block';
+        });
+
+        document.querySelector('.close-button').addEventListener('click', function() {
+            document.querySelector('.controls2').style.display = 'none';
+        });
 
 
         // Event-Listener für die Schieberegler und Eingabefelder
@@ -889,6 +1148,18 @@
         document.getElementById('DeckelholzHöhe').addEventListener('input', aktualisiereKiste);
         document.getElementById('DeckelholzBreite').addEventListener('input', aktualisiereKiste);
         document.getElementById('anzahlDeckelholz').addEventListener('input', aktualisiereKiste);
+
+
+        document.getElementById('stdSatzPlattensäge').addEventListener('input', aktualisiereKiste); 
+        document.getElementById('stdSatzLeistenzuschnitt').addEventListener('input', aktualisiereKiste); 
+        document.getElementById('stdSatzMitarbeiter').addEventListener('input', aktualisiereKiste); 
+        document.getElementById('dauerPlattenzuschnittProPlatte').addEventListener('input', aktualisiereKiste); 
+        document.getElementById('dauerLeistenschnittProLeiste').addEventListener('input', aktualisiereKiste);  
+        document.getElementById('dauerBodenhölzerAuflegenProHolz').addEventListener('input', aktualisiereKiste); 
+        document.getElementById('dauerBodenhölzerVerbindungenVerbolzenProHolz').addEventListener('input', aktualisiereKiste);  
+        document.getElementById('dauerBodenbretterAuflegenUndVernagelnProHolz').addEventListener('input', aktualisiereKiste); 
+        document.getElementById('zuschlagssatzFertigungsgemeinkosten').addEventListener('input', aktualisiereKiste);
+        document.getElementById('zuschlagssatzMaterialgemeinkosten').addEventListener('input', aktualisiereKiste); 
 
 
 
@@ -981,11 +1252,11 @@
             doc.text(`BQM: ${document.getElementById('bodenquadratmeter').textContent} m²`, 10, doc.lastAutoTable.finalY + 40);
             doc.text(`m³: ${document.getElementById('volumengesamt').textContent} m³`, 10, doc.lastAutoTable.finalY + 50);
             doc.text(`kg Tara: ${document.getElementById('kgTara').textContent} kg`, 10, doc.lastAutoTable.finalY + 60);
-            doc.text(`Materialkosten: ${document.getElementById('materialkosten').textContent} €`, 10, doc.lastAutoTable.finalY + 70);
+            doc.text(`CO2: ${document.getElementById('co2').textContent} kg`, 10, doc.lastAutoTable.finalY + 70);
+            doc.text(`marteialeinzelkosten: ${document.getElementById('marteialeinzelkosten').textContent} €`, 10, doc.lastAutoTable.finalY + 80);
 
             doc.save('exported_data.pdf');
         }
-
 
 
 
