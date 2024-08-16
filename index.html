@@ -88,7 +88,9 @@
         <button id="saveButton">Speichern</button>
         <button id="exportButton">exportiere Kistenzettel</button>
         <button id="toggleCameraButton">Ansicht umschalten</button>
+        <button id="arButton">Kiste in AR anzeigen</button>
         <button class="open-kalkulation-button">Kalkulation</button>
+        <button class="saveDataToDatabase">saveDataToDatabase</button>
         <hr>
       
         <div class="control-group">
@@ -427,6 +429,8 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.14/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/webxr/ARButton.js"></script>
+
 
 
     
@@ -442,6 +446,7 @@
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.xr.enabled = true; // WebXR-Unterstützung aktivieren
         document.body.appendChild(renderer.domElement);
 
         // OrbitControls für die Steuerung (bestehender Code)
@@ -463,52 +468,52 @@
         szene.add(kistengruppe);
 
         function toggleCameraView() {
-    if (aktuelleKamera === kameraPerspektiv) {
-        // Speichere die aktuelle Blickrichtung der perspektivischen Kamera
-        const blickRichtung = new THREE.Vector3();
-        kameraPerspektiv.getWorldDirection(blickRichtung);
+            if (aktuelleKamera === kameraPerspektiv) {
+                // Speichere die aktuelle Blickrichtung der perspektivischen Kamera
+                const blickRichtung = new THREE.Vector3();
+                kameraPerspektiv.getWorldDirection(blickRichtung);
 
-        // Wechsel zur orthogonalen Kamera und übernehme die Position der perspektivischen Kamera
-        kameraOrthogonal.position.copy(kameraPerspektiv.position);
-        aktuelleKamera = kameraOrthogonal;
+                // Wechsel zur orthogonalen Kamera und übernehme die Position der perspektivischen Kamera
+                kameraOrthogonal.position.copy(kameraPerspektiv.position);
+                aktuelleKamera = kameraOrthogonal;
 
-        // Wähle die nächste orthogonale Ansicht basierend auf der Blickrichtung
-        if (Math.abs(blickRichtung.x) > Math.abs(blickRichtung.y) && Math.abs(blickRichtung.x) > Math.abs(blickRichtung.z)) {
-            if (blickRichtung.x > 0) {
-                kameraOrthogonal.position.set(-500, 0, 0); // Rechte Seitenansicht
+                // Wähle die nächste orthogonale Ansicht basierend auf der Blickrichtung
+                if (Math.abs(blickRichtung.x) > Math.abs(blickRichtung.y) && Math.abs(blickRichtung.x) > Math.abs(blickRichtung.z)) {
+                    if (blickRichtung.x > 0) {
+                        kameraOrthogonal.position.set(-500, 0, 0); // Rechte Seitenansicht
+                    } else {
+                        kameraOrthogonal.position.set(500, 0, 0); // Linke Seitenansicht
+                    }
+                } else if (Math.abs(blickRichtung.y) > Math.abs(blickRichtung.x) && Math.abs(blickRichtung.y) > Math.abs(blickRichtung.z)) {
+                    if (blickRichtung.y > 0) {
+                        kameraOrthogonal.position.set(0, -500, 0); // Draufsicht
+                    } else {
+                        kameraOrthogonal.position.set(0, 500, 0); // Ansicht von unten
+                    }
+                } else {
+                    if (blickRichtung.z > 0) {
+                        kameraOrthogonal.position.set(0, 0, -500); // Frontalansicht
+                    } else {
+                        kameraOrthogonal.position.set(0, 0, 500); // Rückansicht
+                    }
+                }
+
+                // Kamera genau auf den Ursprung schauen lassen und keine Rotationen zulassen
+                steuerung.target.set(0, 0, 0);
+                kameraOrthogonal.lookAt(0, 0, 0);
             } else {
-                kameraOrthogonal.position.set(500, 0, 0); // Linke Seitenansicht
+                // Wechsel zurück zur perspektivischen Kamera und übernehme die Position der orthogonalen Kamera
+                kameraPerspektiv.position.copy(kameraOrthogonal.position);
+                aktuelleKamera = kameraPerspektiv;
+
+                // Blickrichtung zum Ursprung beibehalten
+                kameraPerspektiv.lookAt(0, 0, 0);
             }
-        } else if (Math.abs(blickRichtung.y) > Math.abs(blickRichtung.x) && Math.abs(blickRichtung.y) > Math.abs(blickRichtung.z)) {
-            if (blickRichtung.y > 0) {
-                kameraOrthogonal.position.set(0, -500, 0); // Draufsicht
-            } else {
-                kameraOrthogonal.position.set(0, 500, 0); // Ansicht von unten
-            }
-        } else {
-            if (blickRichtung.z > 0) {
-                kameraOrthogonal.position.set(0, 0, -500); // Frontalansicht
-            } else {
-                kameraOrthogonal.position.set(0, 0, 500); // Rückansicht
-            }
+
+            // Update OrbitControls mit der neuen Kamera
+            steuerung.object = aktuelleKamera;
+            steuerung.update();
         }
-
-        // Kamera genau auf den Ursprung schauen lassen und keine Rotationen zulassen
-        steuerung.target.set(0, 0, 0);
-        kameraOrthogonal.lookAt(0, 0, 0);
-    } else {
-        // Wechsel zurück zur perspektivischen Kamera und übernehme die Position der orthogonalen Kamera
-        kameraPerspektiv.position.copy(kameraOrthogonal.position);
-        aktuelleKamera = kameraPerspektiv;
-
-        // Blickrichtung zum Ursprung beibehalten
-        kameraPerspektiv.lookAt(0, 0, 0);
-    }
-
-    // Update OrbitControls mit der neuen Kamera
-    steuerung.object = aktuelleKamera;
-    steuerung.update();
-}
 
 
 
@@ -718,13 +723,14 @@
             }
 
             // Querkufen erstellen und zur Boden-Baugruppe hinzufügen
+            const einrückmaßQuerkufe = 40;
             const längeQuerkufen = breite + 2 * SteherHöhe + 2* sperrholzDicke + SeitenleisteVertikalStärke*2;
-            const querkufenAbstand = (länge - querkufenBreite) / (anzahlQuerkufen - 1);
+            const querkufenAbstand = (länge- 2 * einrückmaßQuerkufe - querkufenBreite) / (anzahlQuerkufen - 1);
             const volumenQuerkufen = anzahlQuerkufen * querkufenBreite * querkufenHöhe * längeQuerkufen /1000;
             for (let i = 0; i < anzahlQuerkufen; i++) {
                 const querkufenGeometrie = new THREE.BoxGeometry(querkufenBreite, querkufenHöhe, längeQuerkufen );
                 const querkufe = new THREE.Mesh(querkufenGeometrie, querkufenMaterial);
-                querkufe.position.set(-länge / 2 + i * querkufenAbstand + querkufenBreite / 2, - bodenBrettDicke - längskufenHöhe - querkufenHöhe / 2, 0);
+                querkufe.position.set(-länge / 2 + einrückmaßQuerkufe + i * querkufenAbstand + querkufenBreite / 2, - bodenBrettDicke - längskufenHöhe - querkufenHöhe / 2, 0);
                 bodenGruppe.add(querkufe);
                 bodenGruppe.add(createEdges(querkufe)); // Kanten hinzufügen
             }
@@ -1071,6 +1077,9 @@
         // Event-Listener für den Umschalt-Button
         document.getElementById('toggleCameraButton').addEventListener('click', toggleCameraView);
 
+        // Event-Listener für den AR-Button
+        document.getElementById('arButton').addEventListener('click', startAR);
+
         // Event-Listener für den Upload-Button
         document.getElementById('customButton').addEventListener('click', function() {
             document.getElementById('uploadButton').click();
@@ -1082,6 +1091,9 @@
 
         // Event-Listener für den Export-Button
         document.getElementById('saveButton').addEventListener('click', exportParameters);
+
+        // Event-Listener für den Speichern-Button
+        document.querySelector('.saveDataToDatabase').addEventListener('click', saveDataToDatabase);
 
         // JavaScript for handling the close and open actions
         document.querySelector('.open-kalkulation-button').addEventListener('click', function() {
@@ -1217,6 +1229,51 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
+        function startAR() {
+            // Check if the browser supports WebXR
+            if (navigator.xr) {
+                navigator.xr.requestSession('immersive-ar', {
+                    requiredFeatures: ['hit-test']
+                }).then((session) => {
+                    renderer.xr.setSession(session);
+
+                    const hitTestSource = null;
+                    const hitTestSourceRequested = false;
+
+                    session.addEventListener('select', (event) => {
+                        if (hitTestSource) {
+                            const hit = event.frame.getHitTestResults(hitTestSource);
+                            if (hit.length) {
+                                const hitPose = hit[0].getPose(referenceSpace);
+                                kistengruppe.position.set(hitPose.transform.position.x, hitPose.transform.position.y, hitPose.transform.position.z);
+                            }
+                        }
+                    });
+
+                    session.requestReferenceSpace('local').then((refSpace) => {
+                        referenceSpace = refSpace;
+                        session.requestAnimationFrame(onXRFrame);
+                    });
+
+                    function onXRFrame(time, frame) {
+                        session.requestAnimationFrame(onXRFrame);
+
+                        const viewerSpace = session.requestReferenceSpace('viewer');
+                        if (!hitTestSourceRequested) {
+                            session.requestHitTestSource({ space: viewerSpace }).then((source) => {
+                                hitTestSource = source;
+                            });
+                            hitTestSourceRequested = true;
+                        }
+
+                        renderer.render(szene, aktuelleKamera);
+                    }
+                });
+            } else {
+                alert('WebXR wird in diesem Browser nicht unterstützt');
+            }
+        }
+
         // Initiale Kiste erstellen
         aktualisiereKiste();
 
@@ -1257,6 +1314,48 @@
 
             doc.save('exported_data.pdf');
         }
+
+        function saveDataToDatabase() {
+            const data = {
+                länge: document.getElementById('länge').value,
+                breite: document.getElementById('breite').value,
+                höhe: document.getElementById('höhe').value,
+                nettogewicht: document.getElementById('nettogewicht').value,
+                stapellast: document.getElementById('stapellast').value,
+                anzahlLängskufen: document.getElementById('anzahlLängskufen').value,
+                anzahlQuerkufen: document.getElementById('anzahlQuerkufen').value,
+                längskufenBreite: document.getElementById('längskufenBreite').value,
+                längskufenHöhe: document.getElementById('längskufenHöhe').value,
+                kopfholzBreite: document.getElementById('kopfholzBreite').value,
+                kopfholzHöhe: document.getElementById('kopfholzHöhe').value,
+                bodenBrettDicke: document.getElementById('bodenBrettDicke').value,
+                bodenBrettBreite: document.getElementById('bodenBrettBreite').value,
+                querkufenBreite: document.getElementById('querkufenBreite').value,
+                querkufenHöhe: document.getElementById('querkufenHöhe').value
+            };
+
+            fetch('/api/data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                console.log('Daten erfolgreich in die Datenbank geschrieben:', result);
+            })
+            .catch(error => {
+                console.error('Fehler beim Schreiben der Daten in die Datenbank:', error);
+            });
+        }
+
+
+
+
+
+
+
 
 
 
