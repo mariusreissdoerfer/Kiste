@@ -88,9 +88,10 @@
         <button id="saveButton">Speichern</button>
         <button id="exportButton">exportiere Kistenzettel</button>
         <button id="toggleCameraButton">Ansicht umschalten</button>
-        <button id="openARButton">AR-Modus öffnen</button>
+        <button id="startARButton">Start AR</button>
         <button class="open-kalkulation-button">Kalkulation</button>
         <button class="saveDataToDatabase">saveDataToDatabase</button>
+
         <hr>
       
         <div class="control-group">
@@ -422,9 +423,6 @@
     </div>
 
 
-    
-
-
 
 
     
@@ -432,16 +430,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.14/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://rawcdn.githack.com/AR-js-org/AR.js/3.3.2/aframe/build/aframe-ar.js"></script>
-
-    <div id="ar-container" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000;">
-        <a-scene embedded arjs>
-            <a-box id="ar-box" position="0 0.5 0" rotation="0 45 0" material="color: yellow;"></a-box>
-            <a-marker-camera preset="hiro"></a-marker-camera>
-        </a-scene>
-        <button style="position: absolute; top: 10px; right: 10px; z-index: 1001;" onclick="toggleAR()">Schließen</button>
-    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@webxr-polyfill/webxr-polyfill.min.js"></script>
 
 
 
@@ -525,36 +514,43 @@
             steuerung.object = aktuelleKamera;
             steuerung.update();
         }
+        
+        async function startAR() {
+            if (navigator.xr) {
+                try {
+                    const session = await navigator.xr.requestSession('immersive-ar', {
+                        requiredFeatures: ['hit-test'],
+                    });
 
-        function toggleAR() {
-            const arContainer = document.getElementById('ar-container');
-            if (arContainer.style.display === "none") {
-                // AR-Modus aktivieren
-                arContainer.style.display = "block";
-                
-                // Die Kistenparameter aus deiner bestehenden Szene übernehmen
-                const länge = parseFloat(document.getElementById('länge').value) / 100; // Skalierung von cm auf Meter
-                const breite = parseFloat(document.getElementById('breite').value) / 100;
-                const höhe = parseFloat(document.getElementById('höhe').value) / 100;
+                    const renderer = new THREE.WebGLRenderer({ alpha: true });
+                    renderer.xr.enabled = true;
+                    document.body.appendChild(renderer.domElement);
 
-                // Aktualisiere die Position und Größe der Box in der AR-Szene
-                const arBox = document.getElementById('ar-box');
-                arBox.setAttribute('geometry', {
-                    primitive: 'box',
-                    height: höhe,
-                    width: länge,
-                    depth: breite
-                });
+                    const controller = renderer.xr.getController(0);
+                    controller.addEventListener('select', onSelect);
+                    szene.add(controller);
+
+                    function onSelect() {
+                        const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+                        const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                        const mesh = new THREE.Mesh(geometry, material);
+                        mesh.position.set(0, 0, -0.5).applyMatrix4(controller.matrixWorld);
+                        szene.add(mesh);
+                    }
+
+                    renderer.setAnimationLoop(function () {
+                        renderer.render(szene, kameraPerspektiv);
+                    });
+
+                    renderer.xr.setSession(session);
+
+                } catch (e) {
+                    console.error('Unable to start AR session:', e);
+                }
             } else {
-                // AR-Modus deaktivieren
-                arContainer.style.display = "none";
+                alert('WebXR is not available on this device or browser.');
             }
         }
-
-        document.getElementById('openARButton').addEventListener('click', toggleAR);
-
-
-
 
 
 
@@ -1113,7 +1109,8 @@
 
         }
 
-
+        // Event-Listener für den AR
+        document.getElementById('startARButton').addEventListener('click', startAR);
 
         // Event-Listener für den Umschalt-Button
         document.getElementById('toggleCameraButton').addEventListener('click', toggleCameraView);
