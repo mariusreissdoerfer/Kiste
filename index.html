@@ -81,16 +81,10 @@
 
     </style>
 
-
-
-
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 
 </head>
 <body>
-
-
-
-
     <div class="controls">
         <button id="customButton">öffnen</button>
             <input type="file" id="uploadButton" accept=".json" style="display: none;">
@@ -441,12 +435,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.14/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@webxr-polyfill/webxr-polyfill.min.js"></script>
 
-        <!-- Füge diese Zeile vor deinem eigenen Skript ein -->
-        <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
-
-        <model-viewer id="arViewer" ar ar-modes="scene-viewer webxr quick-look" alt="A 3D model of your box" auto-rotate camera-controls style="width: 100%; height: 500px;"></model-viewer>
-
-
+    <model-viewer id="arViewer" src="model.glb" ar ar-modes="scene-viewer webxr quick-look" environment-image="neutral" skybox-image="neutral" alt="A 3D model of a box" auto-rotate camera-controls style="display:none; width: 100%; height: 500px;"></model-viewer>
 
 
     
@@ -529,61 +518,45 @@
             steuerung.object = aktuelleKamera;
             steuerung.update();
         }
-
-        async function exportKisteAsGLB() {
-            const gltfExporter = new THREE.GLTFExporter();
-            const kiste = kistengruppe; // Hier wird die Kiste aus der Szene genommen
-
-            gltfExporter.parse(
-                kiste,
-                function (result) {
-                    const blob = new Blob([result], { type: 'application/octet-stream' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'kiste.glb';
-                    a.click();
-                    URL.revokeObjectURL(url);
-
-                    // Lade das GLB-Modell in den Model-Viewer, falls WebXR nicht unterstützt wird
-                    document.getElementById('arViewer').setAttribute('src', url);
-                },
-                { binary: true }
-            );
-        }
-
-
         
         async function startAR() {
-            const gltfExporter = new THREE.GLTFExporter();
-            const kiste = kistengruppe; // Hier wird die Kiste aus der Szene genommen
+    if (navigator.xr) {
+        try {
+            const isARSupported = await navigator.xr.isSessionSupported('immersive-ar');
+            if (isARSupported) {
+                const session = await navigator.xr.requestSession('immersive-ar');
 
-            gltfExporter.parse(
-                kiste,
-                function (result) {
-                    const blob = new Blob([result], { type: 'application/octet-stream' });
-                    const url = URL.createObjectURL(blob);
+                const renderer = new THREE.WebGLRenderer({ alpha: true });
+                renderer.xr.enabled = true;
+                document.body.appendChild(renderer.domElement);
 
-                    // Lade das GLB-Modell in den Model-Viewer, um es direkt zu verwenden
-                    const arViewer = document.getElementById('arViewer');
-                    arViewer.src = url;
-                    arViewer.style.display = 'block'; // Zeigt das Model-Viewer-Element an
-                },
-                { binary: true }
-            );
+                const controller = renderer.xr.getController(0);
+                controller.addEventListener('select', onSelect);
+                szene.add(controller);
+
+                function onSelect() {
+                    const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+                    const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                    const mesh = new THREE.Mesh(geometry, material);
+                    mesh.position.set(0, 0, -0.5).applyMatrix4(controller.matrixWorld);
+                    szene.add(mesh);
+                }
+
+                renderer.setAnimationLoop(function () {
+                    renderer.render(szene, kameraPerspektiv);
+                });
+
+                renderer.xr.setSession(session);
+            } else {
+                alert('AR wird auf diesem Gerät nicht unterstützt.');
+            }
+        } catch (e) {
+            console.error('Unable to start AR session:', e);
         }
-
-
-        function useModelViewerFallback() {
-            const arViewer = document.getElementById('arViewer');
-            arViewer.style.display = 'block'; // Zeigt das Model-Viewer-Element an
-        }
-
-        // Event-Listener für den Start-Button
-        document.getElementById('startARButton').addEventListener('click', startAR);
-
-
-
+    } else {
+        alert('WebXR wird auf diesem Gerät oder Browser nicht unterstützt.');
+    }
+}
 
 
 
