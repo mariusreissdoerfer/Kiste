@@ -516,41 +516,45 @@
         }
         
         async function startAR() {
-            if (navigator.xr) {
-                try {
-                    const session = await navigator.xr.requestSession('immersive-ar', {
-                        requiredFeatures: ['hit-test'],
-                    });
+    if (navigator.xr) {
+        try {
+            const isARSupported = await navigator.xr.isSessionSupported('immersive-ar');
+            if (isARSupported) {
+                const session = await navigator.xr.requestSession('immersive-ar');
 
-                    const renderer = new THREE.WebGLRenderer({ alpha: true });
-                    renderer.xr.enabled = true;
-                    document.body.appendChild(renderer.domElement);
+                const renderer = new THREE.WebGLRenderer({ alpha: true });
+                renderer.xr.enabled = true;
+                document.body.appendChild(renderer.domElement);
 
-                    const controller = renderer.xr.getController(0);
-                    controller.addEventListener('select', onSelect);
-                    szene.add(controller);
+                const controller = renderer.xr.getController(0);
+                controller.addEventListener('select', onSelect);
+                szene.add(controller);
 
-                    function onSelect() {
-                        const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-                        const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-                        const mesh = new THREE.Mesh(geometry, material);
-                        mesh.position.set(0, 0, -0.5).applyMatrix4(controller.matrixWorld);
-                        szene.add(mesh);
-                    }
-
-                    renderer.setAnimationLoop(function () {
-                        renderer.render(szene, kameraPerspektiv);
-                    });
-
-                    renderer.xr.setSession(session);
-
-                } catch (e) {
-                    console.error('Unable to start AR session:', e);
+                function onSelect() {
+                    const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+                    const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                    const mesh = new THREE.Mesh(geometry, material);
+                    mesh.position.set(0, 0, -0.5).applyMatrix4(controller.matrixWorld);
+                    szene.add(mesh);
                 }
+
+                renderer.setAnimationLoop(function () {
+                    renderer.render(szene, kameraPerspektiv);
+                });
+
+                renderer.xr.setSession(session);
             } else {
-                alert('WebXR is not available on this device or browser.');
+                alert('AR wird auf diesem Gerät nicht unterstützt.');
             }
+        } catch (e) {
+            console.error('Unable to start AR session:', e);
         }
+    } else {
+        alert('WebXR wird auf diesem Gerät oder Browser nicht unterstützt.');
+    }
+}
+
+
 
 
 
