@@ -33,7 +33,7 @@ app.post('/api/data', async (req, res) => {
   try {
     const client = await pool.connect();
     await client.query('INSERT INTO data (key, value) VALUES ($1, $2)', [key, value]);
-    res.send('Data inserted');
+    res.json({ message: 'Data inserted' });
     client.release();
   } catch (err) {
     console.error(err);
