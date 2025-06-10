@@ -347,8 +347,8 @@
                     <tr>
                         <td>Bodenhölzer verbolzen (anz. verbindungen)</td>
                         <td id="anzahlBodenhölzerVerbindungen"></td>
-                        <td><input type="number" id="dauerBodenhölzerVerbindungenVerbolzenProHolz" value="120"></td>
-                        <td id="dauerBodenhölzerVerbindungenVerbolzen"></td>
+                        <td><input type="number" id="dauerBodenbretterAuflegenUndVernagelnProHolz" value="120"></td>
+                        <td id="dauerBodenbretterAuflegenUndVernageln"></td>
                         <td id="kostenBodenhölzerVerbindungenVerbolzen"></td>
                     </tr>                 
                 </tbody>
@@ -392,15 +392,15 @@
                     <td></td>
                     <td></td>
                     <td></td>
-                    <td id="marteialeinzelkosten"></td>
+                    <td id="materialeinzelkosten"></td>
                 </tbody>
 
                 <tbody>  
-                    <th>Materialgeminkosten</th>
+                    <th>Materialgemeinkosten</th>
                     <td></td>
                     <td><input type="number" id="zuschlagssatzMaterialgemeinkosten" value="12"></td>
                     <td></td>
-                    <td id="Materialgeminkosten"></td>
+                    <td id="Materialgemeinkosten"></td>
                 </tbody>
 
                 <tbody>  
@@ -1020,23 +1020,23 @@
             const kostenBodenhölzerAuflegen = dauerBodenhölzerAuflegen * stdSatzMitarbeiter/(60*60);
 
             const anzahlBodenhölzerVerbindungen = anzahlLängskufen * anzahlQuerkufen + anzahlLängskufen * anzahlKopfholz ;
-            const dauerBodenhölzerVerbindungenVerbolzenProHolz = parseFloat(document.getElementById('dauerBodenhölzerVerbindungenVerbolzenProHolz').value);
-            const dauerBodenhölzerVerbindungenVerbolzen = dauerBodenhölzerVerbindungenVerbolzenProHolz * anzahlBodenhölzerVerbindungen;
-            const kostenBodenhölzerVerbindungenVerbolzen = dauerBodenhölzerVerbindungenVerbolzen * stdSatzMitarbeiter/(60*60);
+            const dauerBodenbretterAuflegenUndVernagelnProHolz = parseFloat(document.getElementById('dauerBodenhölzerVerbindungenVerbolzenProHolz').value);
+            const dauerBodenbretterAuflegenUndVernageln = dauerBodenhölzerVerbindungenVerbolzenProHolz * anzahlBodenhölzerVerbindungen;
+            const kostenBodenhölzerVerbindungenVerbolzen = dauerBodenbretterAuflegenUndVernageln * stdSatzMitarbeiter/(60*60);
 
             const anzahlBodenBretterFürKalk = anzahlBodenBretter;
             const dauerBodenbretterAuflegenUndVernagelnProHolz = parseFloat(document.getElementById('dauerBodenbretterAuflegenUndVernagelnProHolz').value);
             const dauerBodenbretterAuflegenUndVernageln = dauerBodenbretterAuflegenUndVernagelnProHolz * anzahlBodenBretterFürKalk;
-            const kostenBodenbretterAuflegenUndVernageln = dauerBodenhölzerVerbindungenVerbolzen * stdSatzMitarbeiter/(60*60);
+            const kostenBodenbretterAuflegenUndVernageln = dauerBodenbretterAuflegenUndVernageln * stdSatzMitarbeiter/(60*60);
 
             const Fertigungseinzelkosten = kostenPlattenzuschnitt +kostenLeistenzuschnitt + kostenBodenhölzerAuflegen + kostenBodenhölzerVerbindungenVerbolzen + kostenBodenbretterAuflegenUndVernageln;
             const zuschlagssatzFertigungsgemeinkosten = parseFloat(document.getElementById('zuschlagssatzFertigungsgemeinkosten').value);
             const Fertigungsgemeinkosten = zuschlagssatzFertigungsgemeinkosten/100 * Fertigungseinzelkosten;
             const Fertigungskosten = Fertigungseinzelkosten + Fertigungsgemeinkosten;
-            const marteialeinzelkosten = volumengesamt * 200;
+            const materialeinzelkosten = volumengesamt * 200;
             const zuschlagssatzMaterialgemeinkosten = parseFloat(document.getElementById('zuschlagssatzMaterialgemeinkosten').value);
-            const Materialgeminkosten = zuschlagssatzMaterialgemeinkosten/100 * marteialeinzelkosten;
-            const Materialkosten = Materialgeminkosten + marteialeinzelkosten;
+            const Materialgemeinkosten = zuschlagssatzMaterialgemeinkosten/100 * materialeinzelkosten;
+            const Materialkosten = Materialgemeinkosten + materialeinzelkosten;
             const herstellkosten = Fertigungskosten + Materialkosten;
             
             
@@ -1097,7 +1097,7 @@
             document.getElementById('kostenBodenhölzerAuflegen').textContent=kostenBodenhölzerAuflegen.toFixed(2) 
 
             document.getElementById('anzahlBodenhölzerVerbindungen').textContent=anzahlBodenhölzerVerbindungen.toFixed(0) 
-            document.getElementById('dauerBodenhölzerVerbindungenVerbolzen').textContent=(dauerBodenhölzerVerbindungenVerbolzen/60).toFixed(1) 
+            document.getElementById('dauerBodenbretterAuflegenUndVernageln').textContent=(dauerBodenhölzerVerbindungenVerbolzen/60).toFixed(1) 
             document.getElementById('kostenBodenhölzerVerbindungenVerbolzen').textContent=kostenBodenhölzerVerbindungenVerbolzen.toFixed(2) 
 
             document.getElementById('anzahlBodenBretterFürKalk').textContent=anzahlBodenBretterFürKalk.toFixed(0) 
@@ -1107,8 +1107,8 @@
             document.getElementById('Fertigungseinzelkosten').textContent=Fertigungseinzelkosten.toFixed(2) 
             document.getElementById('Fertigungsgemeinkosten').textContent=Fertigungsgemeinkosten.toFixed(2)
             document.getElementById('Fertigungskosten').textContent=Fertigungskosten.toFixed(2)
-            document.getElementById('marteialeinzelkosten').textContent=marteialeinzelkosten.toFixed(2)
-            document.getElementById('Materialgeminkosten').textContent=Materialgeminkosten.toFixed(2)
+            document.getElementById('materialeinzelkosten').textContent=materialeinzelkosten.toFixed(2)
+            document.getElementById('Materialgemeinkosten').textContent=Materialgemeinkosten.toFixed(2)
             document.getElementById('Materialkosten').textContent=Materialkosten.toFixed(2)
             document.getElementById('herstellkosten').textContent=herstellkosten.toFixed(2)
 
@@ -1211,7 +1211,7 @@
         document.getElementById('dauerPlattenzuschnittProPlatte').addEventListener('input', aktualisiereKiste); 
         document.getElementById('dauerLeistenschnittProLeiste').addEventListener('input', aktualisiereKiste);  
         document.getElementById('dauerBodenhölzerAuflegenProHolz').addEventListener('input', aktualisiereKiste); 
-        document.getElementById('dauerBodenhölzerVerbindungenVerbolzenProHolz').addEventListener('input', aktualisiereKiste);  
+        document.getElementById('dauerBodenbretterAuflegenUndVernagelnProHolz').addEventListener('input', aktualisiereKiste);  
         document.getElementById('dauerBodenbretterAuflegenUndVernagelnProHolz').addEventListener('input', aktualisiereKiste); 
         document.getElementById('zuschlagssatzFertigungsgemeinkosten').addEventListener('input', aktualisiereKiste);
         document.getElementById('zuschlagssatzMaterialgemeinkosten').addEventListener('input', aktualisiereKiste); 
@@ -1308,7 +1308,7 @@
             doc.text(`m³: ${document.getElementById('volumengesamt').textContent} m³`, 10, doc.lastAutoTable.finalY + 50);
             doc.text(`kg Tara: ${document.getElementById('kgTara').textContent} kg`, 10, doc.lastAutoTable.finalY + 60);
             doc.text(`CO2: ${document.getElementById('co2').textContent} kg`, 10, doc.lastAutoTable.finalY + 70);
-            doc.text(`marteialeinzelkosten: ${document.getElementById('marteialeinzelkosten').textContent} €`, 10, doc.lastAutoTable.finalY + 80);
+            doc.text(`materialeinzelkosten: ${document.getElementById('materialeinzelkosten').textContent} €`, 10, doc.lastAutoTable.finalY + 80);
 
             doc.save('exported_data.pdf');
         }
