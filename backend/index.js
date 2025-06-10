@@ -13,8 +13,8 @@ const pool = new Pool({
 
 app.use(express.json());
 
-// Serve static files from the frontend
-app.use(express.static(path.join(__dirname, '../frontend')));
+// Serve static files from the project root
+app.use(express.static(path.join(__dirname, '..')));
 
 app.get('/api/data', async (req, res) => {
   try {
@@ -41,6 +41,10 @@ app.post('/api/data', async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+  });
+}
+
+module.exports = app;
